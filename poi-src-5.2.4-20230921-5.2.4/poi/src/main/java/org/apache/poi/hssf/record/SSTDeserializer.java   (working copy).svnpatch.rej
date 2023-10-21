@@ -1,0 +1,11 @@
+--- poi/src/main/java/org/apache/poi/hssf/record/SSTDeserializer.java   (working copy)
++++ poi/src/main/java/org/apache/poi/hssf/record/SSTDeserializer.java   (working copy)
+@@ -49,7 +49,7 @@
+       for (int i=0;i<stringCount;i++) {
+          // Extract exactly the count of strings from the SST record.
+          UnicodeString str;
+-          if (in.available() == 0 && !in.hasNextRecord()) {
++          if (in.available() == 0 && (!in.hasNextRecord() || in.getNextSid() != ContinueRecord.sid)) {
+               LOG.atError().log("Ran out of data before creating all the strings! String at index {}", box(i));
+               str = new UnicodeString("");
+           } else {

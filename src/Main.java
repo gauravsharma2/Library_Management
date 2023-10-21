@@ -1,18 +1,28 @@
 // Press Shift twice to open the Search Everywhere dialog and type `show whitespaces`,
-// then press Enter. You can now see whitespace characters in your code.
-
+// then press Enter. You can now see whitespace characters in your
+import com.opencsv.exceptions.CsvValidationException;
 import net.proteanit.sql.DbUtils;
-
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
+import java.io.FileReader;
+import java.io.IOException;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
 
-import static javax.management.remote.JMXConnectorFactory.connect;
+import java.util.concurrent.TimeUnit;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+
+import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
+import com.opencsv.CSVParserBuilder;
+import com.opencsv.CSVParser;
+import com.opencsv.exceptions.CsvValidationException;
 
 public class Main {
 
@@ -23,7 +33,102 @@ public class Main {
     public static void main(String[] args) {
 
         login();
-        //create()
+        create();
+        ExcelToDatabaseLoader();
+    }
+
+    public static void ExcelToDatabaseLoader() {
+        String csvFilePath = "/Users/gauravsharma/Desktop/DATABASE PROJECT/books.csv"; // Provide the path to your CSV file
+        String jdbcURL = "jdbc:mysql://localhost/LIBRARY"; // Update with your database URL
+        String username = "root"; // Update with your database username
+        String password = "950958Gaurav@"; // Update with your database password
+
+        int batchSize = 20;
+        Connection connection = null;
+
+        try {
+            long start = System.currentTimeMillis();
+
+            // Create a CSVReader with custom settings
+            CSVParser csvParser = new CSVParserBuilder().withSeparator('\t').withIgnoreQuotations(true).build();
+            CSVReader csvReader = new CSVReaderBuilder(new FileReader(csvFilePath))
+                    .withCSVParser(csvParser)
+                    .withSkipLines(1) // Skip the header row
+                    .build();
+
+            connection = DriverManager.getConnection(jdbcURL, username, password);
+            connection.setAutoCommit(false);
+
+            String sql = "INSERT INTO BOOK (ISBN, BTITLE) VALUES (?, ?)";
+            PreparedStatement bookStatement = connection.prepareStatement(sql);
+
+            String authorSql = "INSERT INTO AUTHOR (Name) VALUES (?)";
+            PreparedStatement authorStatement = connection.prepareStatement(authorSql);
+
+            String bookauthorSql = "INSERT INTO BOOK_AUTHORS (ISBN) VALUES (?)";
+            PreparedStatement bookauthorStatement = connection.prepareStatement(bookauthorSql);
+
+            int count = 0;
+
+            String[] nextRecord;
+
+            while ((nextRecord = csvReader.readNext()) != null) {
+                String isbn = nextRecord[1]; // Assuming ISBN is in the second column (0-based index)
+                String title = nextRecord[2]; // Assuming book title is in the third column (0-based index)
+                String authors = nextRecord[3]; // Assuming authors are in the fourth column (0-based index)
+
+                // Insert book
+                boolean bookExists = checkIfBookExists(connection, isbn);
+                if (!bookExists) {
+                    bookStatement.setString(1, isbn);
+                    bookStatement.setString(2, title);
+                    bookStatement.addBatch();
+                }
+                //if (!bookExists) {
+                    bookauthorStatement.setString(1, isbn);
+                    bookauthorStatement.addBatch();
+                //}
+
+                        authorStatement.setString(1, authors);
+                        authorStatement.addBatch();
+
+                if (++count % batchSize == 0) {
+                    bookStatement.executeBatch();
+                    authorStatement.executeBatch();
+                    bookauthorStatement.executeBatch();
+                    connection.commit();
+                }
+            }
+
+            bookStatement.executeBatch();
+            authorStatement.executeBatch();
+            bookauthorStatement.executeBatch();
+
+            connection.commit();
+            connection.close();
+
+            long end = System.currentTimeMillis();
+            System.out.printf("Import done in %d ms\n", (end - start));
+        } catch (IOException ex1) {
+            System.out.println("Error reading file");
+            ex1.printStackTrace();
+        } catch (SQLException ex2) {
+            System.out.println("Database error");
+            ex2.printStackTrace();
+        } catch (CsvValidationException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    private static boolean checkIfBookExists(Connection connection, String isbn) throws SQLException {
+        String query = "SELECT ISBN FROM BOOK WHERE ISBN = ?";
+        PreparedStatement statement = connection.prepareStatement(query);
+        statement.setString(1, isbn);
+
+        ResultSet resultSet = statement.executeQuery();
+        return resultSet.next(); // Returns true if a record with the ISBN exists
     }
 
     public static void login() {
@@ -131,37 +236,52 @@ public class Main {
         try {
             Connection connection=connect();
             ResultSet resultSet = connection.getMetaData().getCatalogs();
+            boolean databaseExists = false;
             //iterate each catalog in the ResultSet
             while (resultSet.next()) {
                 // Get the database name, which is at position 1
                 String databaseName = resultSet.getString(1);
-                if(databaseName.equals("library")) {
+                if(databaseName.equals("LIBRARY")) {
                     //System.out.print("yes");
-                    Statement stmt = connection.createStatement();
+                    //Statement stmt = connection.createStatement();
                     //Drop database if it pre-exists to reset the complete database
-                    String sql = "DROP DATABASE library";
-                    stmt.executeUpdate(sql);
+                    //String sql = "DROP DATABASE library";
+                    //stmt.executeUpdate(sql);
+                    databaseExists = true;
+                    break;
                 }
             }
-            Statement stmt = connection.createStatement();
-
-            String sql = "CREATE DATABASE LIBRARY"; //Create Database
-            stmt.executeUpdate(sql);
-            stmt.executeUpdate("USE LIBRARY"); //Use Database
-            //Create Users Table
-            String sql1 = "CREATE TABLE USERS(UID INT NOT NULL AUTO_INCREMENT PRIMARY KEY, USERNAME VARCHAR(30), PASSWORD VARCHAR(30), ADMIN BOOLEAN)";
-            stmt.executeUpdate(sql1);
-            //Insert into users table
-            stmt.executeUpdate("INSERT INTO USERS(USERNAME, PASSWORD, ADMIN) VALUES('admin','admin',TRUE)");
-            //Create Books table
-            stmt.executeUpdate("CREATE TABLE BOOKS(ISBN INT NOT NULL AUTO_INCREMENT PRIMARY KEY, BTITLE VARCHAR(50), BAUTHOR VARCHAR(20), AVAILABILITY INT)");
-            //Create Issued Table
-            stmt.executeUpdate("CREATE TABLE ISSUED(IID INT NOT NULL AUTO_INCREMENT PRIMARY KEY, UID INT, ISBN INT, ISSUED_DATE VARCHAR(20), RETURN_DATE VARCHAR(20), PERIOD INT, FINE INT)");
-            //Insert into books table
-            stmt.executeUpdate("INSERT INTO BOOKS(BTITLE, BAUTHOR, AVAILABILITY) VALUES ('War and Peace', 'Mystery', 200),  ('The Guest Book', 'Fiction', 300), ('The Perfect Murder','Mystery', 150), ('Accidental Presidents', 'Biography', 250), ('The Wicked King','Fiction', 350)");
-
             resultSet.close();
-        }
+            Statement stmt = connection.createStatement();
+            if (!databaseExists)
+            {
+                String sql = "CREATE DATABASE LIBRARY"; //Create Database
+                stmt.executeUpdate(sql);
+                stmt.executeUpdate("USE LIBRARY"); //Use Database
+                //Create Users Table
+                String sql1 = "CREATE TABLE USERS(UID INT NOT NULL AUTO_INCREMENT PRIMARY KEY, USERNAME VARCHAR(30), PASSWORD VARCHAR(30), ADMIN BOOLEAN)";
+                stmt.executeUpdate(sql1);
+                //Insert into users table
+                stmt.executeUpdate("INSERT INTO USERS(USERNAME, PASSWORD, ADMIN) VALUES('admin','admin',TRUE)");
+                //CREATE BOOK_AUTHOR TABLE
+                stmt.executeUpdate("CREATE TABLE BOOK_AUTHOR(ISBN VARCHAR(255) NOT NULL  PRIMARY KEY, BAUTHOR VARCHAR(50))");
+                //CREATE AUTHOR TABLE
+                stmt.executeUpdate("CREATE TABLE AUTHOR(AuthorID INT NOT NULL  PRIMARY KEY, NAME VARCHAR(50))");
+                //CREATE BORROWER TABLE
+                stmt.executeUpdate("CREATE TABLE BORROWER(CARDID INT NOT NULL  PRIMARY KEY,SSN INT NOT NULL, BNAME VARCHAR(50),ADDRESS VARCHAR(50),PHONE_NUMBER INT)");
+                //Create Books table
+                stmt.executeUpdate("CREATE TABLE BOOK(ISBN VARCHAR(255) NOT NULL  PRIMARY KEY, BTITLE VARCHAR(50))");
+                //CREATE TABLE BOOK_LOANS
+                stmt.executeUpdate("CREATE TABLE BOOK_LOANS(LOAN_ID INT NOT NULL  PRIMARY KEY,ISBN VARCHAR(255),CARDID INT,RETURN_DATE VARCHAR(20),DUE_DATE VARCHAR(50),ISSUED_DATE VARCHAR(20))");
+                //CREATE TABLE FINES
+                stmt.executeUpdate("CREATE TABLE FINES(LOAN_ID INT NOT NULL  PRIMARY KEY,FINE_AMOUNT INT,PAID INT)");
+                //Insert into books table
+                // stmt.executeUpdate("INSERT INTO BOOKS(BTITLE, BAUTHOR, AVAILABILITY) VALUES ('War and Peace', 'Mystery', 200),  ('The Guest Book', 'Fiction', 300), ('The Perfect Murder','Mystery', 150), ('Accidental Presidents', 'Biography', 250), ('The Wicked King','Fiction', 350)");
+
+                resultSet.close();
+            }
+            }
+
         catch (Exception ex) {
             ex.printStackTrace();
         }

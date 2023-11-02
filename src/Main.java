@@ -33,20 +33,6 @@ public class Main {
         Connection connection=connect();
         Statement stmt = connection.createStatement();
         ResultSet resultSet = connection.getMetaData().getCatalogs();
-        while (resultSet.next()) {
-            String table = resultSet.getString(1);
-            stmt.executeUpdate("TRUNCATE TABLE " + table);
-        }
-
-        // Commit the changes
-        connection.commit();
-
-        // Close the statement and connection
-        stmt.close();
-        connection.close();
-
-
-        resultSet.close();
 
         int batchSize = 20;
         connection = null;
@@ -68,7 +54,7 @@ public class Main {
             PreparedStatement bookStatement = connection.prepareStatement(sql);
 
             String authorSql = "INSERT INTO AUTHOR (Name) VALUES (?)";
-            PreparedStatement authorStatement = connection.prepareStatement(authorSql);
+            PreparedStatement authorStatement = connection.prepareStatement(authorSql, Statement.RETURN_GENERATED_KEYS);
 
             String bookauthorSql = "INSERT INTO BOOK_AUTHORS (ISBN) VALUES (?)";
             PreparedStatement bookauthorStatement = connection.prepareStatement(bookauthorSql);
@@ -90,10 +76,6 @@ public class Main {
                     bookStatement.setString(2, title);
                     bookStatement.addBatch();
                 }
-                //if (!bookExists) {
-                    bookauthorStatement.setString(1, isbn);
-                    bookauthorStatement.addBatch();
-                //}
 
                         authorStatement.setString(1, authors);
                         authorStatement.addBatch();
@@ -101,6 +83,7 @@ public class Main {
                 if (++count % batchSize == 0) {
                     bookStatement.executeBatch();
                     authorStatement.executeBatch();
+                    ResultSet generatedKeys = authorStatement.getGeneratedKeys();
                     bookauthorStatement.executeBatch();
                     connection.commit();
                 }

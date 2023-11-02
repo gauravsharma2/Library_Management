@@ -89,7 +89,7 @@ public class Login {
                                     if (admin.equals("1")) { //If boolean value 1
                                         AdminMenu.admin_menu(); //redirect to admin menu
                                     } else {
-                                        AdminMenu.admin_menu();//redirect to user menu for that user ID
+                                        UserMenu.user_menu(UID);//redirect to user menu for that user ID
                                     }
                                 }
                             }

@@ -24,41 +24,45 @@ public class UserMenu {
     public static void user_menu(String UID) {
 
 
+
+
         JFrame f=new JFrame("User Functions"); //Give dialog box name as User functions
         //f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); //Exit user menu on closing the dialog box
-        JButton view_but=new JButton("View Books");//creating instance of JButton
-        view_but.setBounds(20,20,120,25);//x axis, y axis, width, height
-        view_but.addActionListener(new ActionListener() {
-                                       public void actionPerformed(ActionEvent e){
+        JTextField searchField = new JTextField();
+        searchField.setBounds(300, 20, 200, 25);
+        f.add(searchField);
 
-                                           JFrame f = new JFrame("Books Available"); //View books stored in database
-                                           //f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        // Create a JButton for searching
+        JButton searchButton = new JButton("Search");
+        searchButton.setBounds(520, 20, 80, 25);
+        f.add(searchButton);
 
+        searchButton.addActionListener(new ActionListener() {
+            Connection connection = connect();
+            public void actionPerformed(ActionEvent e) {
+                String bookName = searchField.getText(); // Get the book name from the text field
 
-                                           Connection connection = connect();
-                                           String sql="select * from BOOKS"; //Retreive data from database
-                                           try {
-                                               Statement stmt = connection.createStatement(); //connect to database
-                                               stmt.executeUpdate("USE LIBRARY"); // use librabry
-                                               stmt=connection.createStatement();
-                                               ResultSet rs=stmt.executeQuery(sql);
-                                               JTable book_list= new JTable(); //show data in table format
-                                               book_list.setModel(DbUtils.resultSetToTableModel(rs));
+                JFrame f = new JFrame("Search Results for " + bookName);
+                // ... (rest of your code for creating a new JFrame and database connection)
 
-                                               JScrollPane scrollPane = new JScrollPane(book_list); //enable scroll bar
+                // Construct your SQL query to search for books by name
+                String sql = "SELECT * FROM BOOKS WHERE BTITLE LIKE '%" + bookName + "%'";
+                try {
+                    Statement stmt = connection.createStatement();
+                    ResultSet rs = stmt.executeQuery(sql);
+                    JTable bookList = new JTable();
+                    bookList.setModel(DbUtils.resultSetToTableModel(rs));
+                    JScrollPane scrollPane = new JScrollPane(bookList);
 
-                                               f.add(scrollPane); //add scroll bar
-                                               f.setSize(800, 400); //set dimensions of view books frame
-                                               f.setVisible(true);
-                                               f.setLocationRelativeTo(null);
-                                           } catch (SQLException e1) {
-                                               // TODO Auto-generated catch block
-                                               JOptionPane.showMessageDialog(null, e1);
-                                           }
-
-                                       }
-                                   }
-        );
+                    f.add(scrollPane);
+                    f.setSize(800, 400);
+                    f.setVisible(true);
+                    f.setLocationRelativeTo(null);
+                } catch (SQLException e1) {
+                    JOptionPane.showMessageDialog(null, e1);
+                }
+            }
+        });
 
         JButton my_book=new JButton("My Books");//creating instance of JButton
         my_book.setBounds(150,20,120,25);//x axis, y axis, width, height
@@ -104,10 +108,7 @@ public class UserMenu {
                                   }
         );
 
-
-
         f.add(my_book); //add my books
-        f.add(view_but); // add view books
         f.setSize(300,100);//400 width and 500 height
         f.setLayout(null);//using no layout managers
         f.setVisible(true);//making the frame visible

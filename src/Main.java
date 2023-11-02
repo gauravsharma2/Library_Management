@@ -25,7 +25,7 @@ public class Main {
 
     public static void ExcelToDatabaseLoader() throws SQLException {
         String csvFilePath = "/Users/gauravsharma/Desktop/DATABASE PROJECT/books.csv"; // Provide the path to your CSV file
-        String borrower = "/Users/gauravsharma/Desktop/DATABASE PROJECT/borrowers.csv"; // Provide the path to your CSV file
+        //String borrower = "/Users/gauravsharma/Desktop/DATABASE PROJECT/borrowers.csv"; // Provide the path to your CSV file
         String jdbcURL = "jdbc:mysql://localhost/LIBRARY"; // Update with your database URL
         String username = "root"; // Update with your database username
         String password = "950958Gaurav@"; // Update with your database password
@@ -62,7 +62,6 @@ public class Main {
             int count = 0;
 
             String[] nextRecord;
-            String[] nextRecord1;
 
             while ((nextRecord = csvReader.readNext()) != null) {
                 String isbn = nextRecord[1]; // Assuming ISBN is in the second column (0-based index)

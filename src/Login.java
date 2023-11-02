@@ -85,7 +85,7 @@ public class Login {
                                 while (rs.next()) {
                                     String admin = rs.getString("ADMIN"); //user is admin
                                     //System.out.println(admin);
-                                    String UID = rs.getString("UID"); //Get user ID of the user
+                                    String UID = rs.getString("USERNAME"); //Get user ID of the user
                                     if (admin.equals("1")) { //If boolean value 1
                                         AdminMenu.admin_menu(); //redirect to admin menu
                                     } else {

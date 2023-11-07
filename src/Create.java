@@ -29,12 +29,11 @@ public class Create {
                 // Get the database name, which is at position 1
                 String databaseName = resultSet.getString(1);
                 if(databaseName.equals("LIBRARY")) {
-                    //System.out.print("yes");
-                    //Statement stmt = connection.createStatement();
-                    //Drop database if it pre-exists to reset the complete database
-                    //String sql = "DROP DATABASE library";
-                    //stmt.executeUpdate(sql);
-                    databaseExists = true;
+                    System.out.print("yes");
+                    Statement stmt = connection.createStatement();
+                   // Drop database if it pre-exists to reset the complete database
+                    String sql = "DROP DATABASE LIBRARY";
+                    stmt.executeUpdate(sql);
                     break;
                 }
             }
@@ -50,14 +49,15 @@ public class Create {
                 stmt.executeUpdate(sql1);
                 //Insert into users table
                 stmt.executeUpdate("INSERT INTO USERS(USERNAME, PASSWORD, ADMIN) VALUES('admin','admin',TRUE)");
+                stmt.executeUpdate("INSERT INTO USERS(USERNAME, PASSWORD, ADMIN) VALUES('GAURAV','GAURAV',FALSE)");
                 //CREATE BOOK_AUTHOR TABLE
-                stmt.executeUpdate("CREATE TABLE BOOK_AUTHOR(ISBN VARCHAR(255) NOT NULL  PRIMARY KEY, BAUTHOR VARCHAR(50))");
+                stmt.executeUpdate("CREATE TABLE BOOK_AUTHORS(AuthorID INT AUTO_INCREMENT NOT NULL  PRIMARY KEY,ISBN VARCHAR(255) NOT NULL  UNIQUE KEY)");
                 //CREATE AUTHOR TABLE
-                stmt.executeUpdate("CREATE TABLE AUTHOR(AuthorID INT NOT NULL  PRIMARY KEY, NAME VARCHAR(50))");
+                stmt.executeUpdate("CREATE TABLE AUTHORS(AuthorID INT AUTO_INCREMENT NOT NULL  PRIMARY KEY, NAME VARCHAR(255))");
                 //CREATE BORROWER TABLE
-                stmt.executeUpdate("CREATE TABLE BORROWER(CARDID INT NOT NULL  PRIMARY KEY,SSN INT NOT NULL, BNAME VARCHAR(50),ADDRESS VARCHAR(50),PHONE_NUMBER INT)");
+                stmt.executeUpdate("CREATE TABLE BORROWER(CARDID INT NOT NULL  PRIMARY KEY,SSN INT NOT NULL, BNAME VARCHAR(255),ADDRESS VARCHAR(255),PHONE_NUMBER INT)");
                 //Create Books table
-                stmt.executeUpdate("CREATE TABLE BOOK(ISBN VARCHAR(255) NOT NULL  PRIMARY KEY, BTITLE VARCHAR(50))");
+                stmt.executeUpdate("CREATE TABLE BOOK(ISBN VARCHAR(255) NOT NULL  PRIMARY KEY, BTITLE VARCHAR(400),AVAILABILITY INT NOT NULL DEFAULT 1)");
                 //CREATE TABLE BOOK_LOANS
                 stmt.executeUpdate("CREATE TABLE BOOK_LOANS(LOAN_ID INT NOT NULL  PRIMARY KEY,ISBN VARCHAR(255),CARDID INT,RETURN_DATE VARCHAR(20),DUE_DATE VARCHAR(50),ISSUED_DATE VARCHAR(20))");
                 //CREATE TABLE FINES

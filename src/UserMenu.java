@@ -89,37 +89,52 @@ public class UserMenu {
             }
         });
 
+            searchButton.addActionListener(new ActionListener() {
+                Connection connection = connect();
 
-        searchButton.addActionListener(new ActionListener() {
-            Connection connection = connect();
-            public void actionPerformed(ActionEvent e) {
-                String bookName = searchField.getText(); // Get the book name from the text field
-                String csvFilePath = "/Users/gauravsharma/Desktop/DATABASE PROJECT/borrower.csv";
+                public void actionPerformed(ActionEvent e) {
+                    String searchText = searchField.getText();
 
+                    // Construct your SQL query to search for books by book name, ISBN, or author
+                    String sql = "SELECT B.ISBN, B.BTITLE, " +
+                            "GROUP_CONCAT(A.NAME SEPARATOR ', ') AS Authors, " +
+                            "B.AVAILABILITY " +
+                            "FROM LIBRARY.BOOK B " +
+                            "LEFT JOIN LIBRARY.BOOK_AUTHORS BA ON B.ISBN = BA.ISBN " +
+                            "LEFT JOIN LIBRARY.AUTHORS A ON BA.AuthorID = A.AuthorID " +
+                            "WHERE B.BTITLE LIKE '%" + searchText + "%' " +
+                            "OR B.ISBN LIKE '%" + searchText + "%' " +
+                            "OR A.NAME LIKE '%" + searchText + "%' " +
+                            "GROUP BY B.ISBN, B.BTITLE, B.AVAILABILITY";
 
-                JFrame f = new JFrame("Search Results for " + bookName);
-                // ... (rest of your code for creating a new JFrame and database connection)
+                    try {
+                        Statement stmt = connection.createStatement();
+                        ResultSet rs = stmt.executeQuery(sql);
 
-                // Construct your SQL query to search for books by name
-                String sql = "SELECT * FROM LIBRARY.BOOK WHERE BTITLE LIKE '%" + bookName + "%'";
-                try {
-                    Statement stmt = connection.createStatement();
-                    ResultSet rs = stmt.executeQuery(sql);
-                    JTable bookList = new JTable();
-                    bookList.setModel(DbUtils.resultSetToTableModel(rs));
-                    JScrollPane scrollPane = new JScrollPane(bookList);
+                        JTable bookList = new JTable();
+                        bookList.setModel(DbUtils.resultSetToTableModel(rs));
 
-                    f.add(scrollPane);
-                    f.setSize(800, 400);
-                    f.setVisible(true);
-                    f.setLocationRelativeTo(null);
-                } catch (SQLException e1) {
-                    JOptionPane.showMessageDialog(null, e1);
+                        // Rename the table columns for better display
+                        bookList.getColumnModel().getColumn(0).setHeaderValue("ISBN");
+                        bookList.getColumnModel().getColumn(1).setHeaderValue("Book Title");
+                        bookList.getColumnModel().getColumn(2).setHeaderValue("Book Author(s)");
+                        bookList.getColumnModel().getColumn(3).setHeaderValue("Book Availability");
+
+                        JScrollPane scrollPane = new JScrollPane(bookList);
+
+                        JFrame resultFrame = new JFrame("Search Results for " + searchText);
+                        resultFrame.add(scrollPane);
+                        resultFrame.setSize(800, 400);
+                        resultFrame.setVisible(true);
+                        //resultFrame.setLocationRelativeTo null);
+                    } catch (SQLException e1) {
+                        JOptionPane.showMessageDialog(null, e1);
+                    }
                 }
-            }
-        });
+            });
 
-        JButton my_book=new JButton("My Books");//creating instance of JButton
+
+            JButton my_book=new JButton("My Books");//creating instance of JButton
         my_book.setBounds(100,140,120,25);//x axis, y axis, width, height
         my_book.addActionListener(new ActionListener() { //Perform action
                                       public void actionPerformed(ActionEvent e){

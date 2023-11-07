@@ -35,7 +35,7 @@ public class Main {
         ResultSet resultSet = connection.getMetaData().getCatalogs();
 
         int batchSize = 20;
-        connection = null;
+       // connection = null;
 
         try {
             long start = System.currentTimeMillis();
@@ -53,12 +53,11 @@ public class Main {
             String sql = "INSERT INTO BOOK (ISBN, BTITLE) VALUES (?, ?)";
             PreparedStatement bookStatement = connection.prepareStatement(sql);
 
-            String authorSql = "INSERT INTO AUTHOR (Name) VALUES (?)";
+            String authorSql = "INSERT INTO AUTHORS (Name) VALUES (?)";
             PreparedStatement authorStatement = connection.prepareStatement(authorSql, Statement.RETURN_GENERATED_KEYS);
 
             String bookauthorSql = "INSERT INTO BOOK_AUTHORS (ISBN) VALUES (?)";
             PreparedStatement bookauthorStatement = connection.prepareStatement(bookauthorSql);
-
             int count = 0;
 
             String[] nextRecord;
@@ -78,6 +77,8 @@ public class Main {
 
                         authorStatement.setString(1, authors);
                         authorStatement.addBatch();
+                        bookauthorStatement.setString(1, isbn);
+                        bookauthorStatement.addBatch();
 
                 if (++count % batchSize == 0) {
                     bookStatement.executeBatch();
@@ -91,6 +92,8 @@ public class Main {
             bookStatement.executeBatch();
             authorStatement.executeBatch();
             bookauthorStatement.executeBatch();
+
+
 
             connection.commit();
             connection.close();

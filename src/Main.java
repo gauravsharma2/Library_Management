@@ -11,6 +11,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.sql.*;
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class Main {
 
@@ -36,7 +37,7 @@ public class Main {
         ResultSet resultSet = connection.getMetaData().getCatalogs();
 
         int batchSize = 20;
-       // connection = null;
+        // connection = null;
         HashMap<String, Integer> authorIds = new HashMap<>(); // To store AuthorID for each author name
         int authorIdCounter = 1; // Counter for generating unique AuthorID
 
@@ -65,6 +66,9 @@ public class Main {
 
             String[] nextRecord;
 
+            // Create a HashSet to store unique combinations of ISBN and AuthorID
+            HashSet<String> uniqueEntries = new HashSet<>();
+
             while ((nextRecord = csvReader.readNext()) != null) {
                 String isbn = nextRecord[1]; // Assuming ISBN is in the second column (0-based index)
                 String title = nextRecord[2]; // Assuming book title is in the third column (0-based index)
@@ -74,6 +78,7 @@ public class Main {
                     authorStatement.setString(1, authorName);
                     authorStatement.addBatch();
                 }
+
                 for (String authorName : authorsArray) {
                     String trimmedAuthorName = authorName.trim();
 
@@ -83,13 +88,19 @@ public class Main {
                     }
                     int authorId = authorIds.get(trimmedAuthorName);
 
-                    // Your code to insert ISBN and AuthorID into BOOK_AUTHORS table
-                    bookauthorStatement.setInt(1, authorId);
-                    bookauthorStatement.setString(2, isbn);
-                    bookauthorStatement.executeUpdate();
-                }
-                bookauthorStatement.setString(1, isbn);
+                    // Check if the combination of ISBN and AuthorID already exists
+                    String combinedKey = isbn + "-" + authorId;
+                    if (!uniqueEntries.contains(combinedKey)) {
+                        uniqueEntries.add(combinedKey);
 
+                        // Insert into BOOK_AUTHORS table
+                        bookauthorStatement.setInt(1, authorId);
+                        bookauthorStatement.setString(2, isbn);
+                        bookauthorStatement.addBatch();
+                    }
+                }
+
+                bookauthorStatement.setString(1, isbn);
 
                 // Insert book
                 boolean bookExists = checkIfBookExists(connection, isbn);
@@ -106,6 +117,7 @@ public class Main {
                     connection.commit();
                 }
             }
+
 
             bookStatement.executeBatch();
             authorStatement.executeBatch();
@@ -155,5 +167,4 @@ public class Main {
         return null;
     }
 }
-
 

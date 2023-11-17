@@ -36,9 +36,9 @@ public class AdminMenu {
 
 
         JFrame f = new JFrame("Admin Functions");
-        f.setLayout(null); // Use no layout manager
-        f.setSize(800, 600);
-        //f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); //
+        //f.setLayout(null); // Use no layout manager
+        f.setSize(1000, 1000);
+        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); //
 
 
         JButton create_but=new JButton("Create/Reset Database");//creating instance of JButton to create or reset database

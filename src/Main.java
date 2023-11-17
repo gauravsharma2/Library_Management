@@ -10,6 +10,7 @@ import com.opencsv.exceptions.CsvValidationException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.*;
+import java.util.HashMap;
 
 public class Main {
 
@@ -36,6 +37,8 @@ public class Main {
 
         int batchSize = 20;
        // connection = null;
+        HashMap<String, Integer> authorIds = new HashMap<>(); // To store AuthorID for each author name
+        int authorIdCounter = 1; // Counter for generating unique AuthorID
 
         try {
             long start = System.currentTimeMillis();
@@ -56,7 +59,7 @@ public class Main {
             String authorSql = "INSERT INTO AUTHORS (Name) VALUES (?)";
             PreparedStatement authorStatement = connection.prepareStatement(authorSql, Statement.RETURN_GENERATED_KEYS);
 
-            String bookauthorSql = "INSERT INTO BOOK_AUTHORS (ISBN) VALUES (?)";
+            String bookauthorSql = "INSERT INTO BOOK_AUTHORS (AuthorID,ISBN) VALUES (?,?)";
             PreparedStatement bookauthorStatement = connection.prepareStatement(bookauthorSql);
             int count = 0;
 
@@ -65,7 +68,28 @@ public class Main {
             while ((nextRecord = csvReader.readNext()) != null) {
                 String isbn = nextRecord[1]; // Assuming ISBN is in the second column (0-based index)
                 String title = nextRecord[2]; // Assuming book title is in the third column (0-based index)
-                String authors = nextRecord[3]; // Assuming authors are in the fourth column (0-based index)
+                String[] authorsArray = nextRecord[3].split("[,;:]");
+
+                for (String authorName : authorsArray) {
+                    authorStatement.setString(1, authorName);
+                    authorStatement.addBatch();
+                }
+                for (String authorName : authorsArray) {
+                    String trimmedAuthorName = authorName.trim();
+
+                    if (!authorIds.containsKey(trimmedAuthorName)) {
+                        authorIds.put(trimmedAuthorName, authorIdCounter);
+                        authorIdCounter++;
+                    }
+                    int authorId = authorIds.get(trimmedAuthorName);
+
+                    // Your code to insert ISBN and AuthorID into BOOK_AUTHORS table
+                    bookauthorStatement.setInt(1, authorId);
+                    bookauthorStatement.setString(2, isbn);
+                    bookauthorStatement.executeUpdate();
+                }
+                bookauthorStatement.setString(1, isbn);
+
 
                 // Insert book
                 boolean bookExists = checkIfBookExists(connection, isbn);
@@ -75,15 +99,9 @@ public class Main {
                     bookStatement.addBatch();
                 }
 
-                        authorStatement.setString(1, authors);
-                        authorStatement.addBatch();
-                        bookauthorStatement.setString(1, isbn);
-                        bookauthorStatement.addBatch();
-
                 if (++count % batchSize == 0) {
                     bookStatement.executeBatch();
                     authorStatement.executeBatch();
-                    ResultSet generatedKeys = authorStatement.getGeneratedKeys();
                     bookauthorStatement.executeBatch();
                     connection.commit();
                 }

@@ -1,22 +1,9 @@
 // Press Shift twice to open the Search Everywhere dialog and type `show whitespaces`,
 // then press Enter. You can now see whitespace characters in your
-import com.opencsv.exceptions.CsvValidationException;
-import net.proteanit.sql.DbUtils;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
-import java.io.FileReader;
-import java.io.IOException;
 import java.sql.*;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-
-import java.util.concurrent.TimeUnit;
-import com.opencsv.*;
-
-import static javax.management.remote.JMXConnectorFactory.connect;
 
 public class Login {
     public static Connection connect()
@@ -111,7 +98,7 @@ public class Login {
         f.add(l1);  // add label1 i.e. for username
         f.add(l2); // add label2 i.e. for password
 
-        f.setSize(400,180);//400 width and 500 height
+        f.setSize(500,500);//400 width and 500 height
         f.setLayout(null);//using no layout managers
         f.setVisible(true);//making the frame visible
         f.setLocationRelativeTo(null);

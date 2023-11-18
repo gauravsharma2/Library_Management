@@ -1,21 +1,26 @@
 // Press Shift twice to open the Search Everywhere dialog and type `show whitespaces`,
 // then press Enter. You can now see whitespace characters in your
+import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import net.proteanit.sql.DbUtils;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import com.opencsv.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
 
 public class AdminMenu {
     public static Connection connect()
@@ -33,6 +38,12 @@ public class AdminMenu {
         return null;
     }
     public static void admin_menu() {
+
+        String borrower = "/Users/gauravsharma/Desktop/DATABASE PROJECT/borrowers.csv"; // Provide the path to your CSV file
+        String jdbcURL = "jdbc:mysql://localhost/LIBRARY"; // Update with your database URL
+        String username = "root"; // Update with your database username
+        String password = "950958Gaurav@"; // Update with your database password
+        Connection connection=connect();
 
 
         JFrame f = new JFrame("Admin Functions");
@@ -267,6 +278,94 @@ public class AdminMenu {
         });
 
 
+       /* JButton add_borrower=new JButton("Add Borrower"); //creating instance of JButton to add users
+        add_user.setBounds(100,400,120,25); //set dimensions for button
+
+        add_user.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e){
+
+                JFrame g = new JFrame("Enter User Details"); //Frame to enter user details
+                //g.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                //Create label
+                JLabel l1,l2;
+                l1=new JLabel("Username");  //label 1 for username
+                l1.setBounds(30,15, 100,30);
+
+
+                l2=new JLabel("Password");  //label 2 for password
+                l2.setBounds(30,50, 100,30);
+
+                //set text field for username
+                JTextField F_user = new JTextField();
+                F_user.setBounds(110, 15, 200, 30);
+
+                //set text field for password
+                JPasswordField F_pass=new JPasswordField();
+                F_pass.setBounds(110, 50, 200, 30);
+                //set radio button for admin
+                JRadioButton a1 = new JRadioButton("Admin");
+                a1.setBounds(55, 80, 200,30);
+                //set radio button for user
+                JRadioButton a2 = new JRadioButton("User");
+                a2.setBounds(130, 80, 200,30);
+                //add radio buttons
+                ButtonGroup bg=new ButtonGroup();
+                bg.add(a1);bg.add(a2);
+
+
+                JButton create_but=new JButton("Create");//creating instance of JButton for Create
+                create_but.setBounds(100,250,80,25);//x axis, y axis, width, height
+                create_but.addActionListener(new ActionListener() {
+
+                    public void actionPerformed(ActionEvent e){
+
+                        String username = F_user.getText();
+                        String password = F_pass.getText();
+                        Boolean admin = false;
+
+                        if(a1.isSelected()) {
+                            admin=true;
+                        }
+
+                        Connection connection = connect();
+
+                        try {
+                            Statement stmt = connection.createStatement();
+                            stmt.executeUpdate("USE LIBRARY");
+                            stmt.executeUpdate("INSERT INTO USERS(USERNAME,PASSWORD,ADMIN) VALUES ('"+username+"','"+password+"',"+admin+")");
+                            JOptionPane.showMessageDialog(null,"User added!");
+                            g.dispose();
+
+                        }
+
+                        catch (SQLException e1) {
+                            // TODO Auto-generated catch block
+                            JOptionPane.showMessageDialog(null, e1);
+                        }
+
+                    }
+
+                });
+
+
+                g.add(create_but);
+                g.add(a2);
+                g.add(a1);
+                g.add(l1);
+                g.add(l2);
+                g.add(F_user);
+                g.add(F_pass);
+                g.setSize(350,200);//400 width and 500 height
+                g.setLayout(null);//using no layout managers
+                g.setVisible(true);//making the frame visible
+                g.setLocationRelativeTo(null);
+
+
+            }
+        });*/
+
+
+
         JButton add_book=new JButton("Add Book"); //creating instance of JButton for adding books
         add_book.setBounds(100,250,120,25);
 
@@ -364,12 +463,6 @@ public class AdminMenu {
                 l2=new JLabel("User ID(UID)");  //Label 2 for user ID
                 l2.setBounds(30,53, 100,30);
 
-                l3=new JLabel("Period(days)");  //Label 3 for period
-                l3.setBounds(30,90, 100,30);
-
-                l4=new JLabel("Issued Date(DD-MM-YYYY)");  //Label 4 for issue date
-                l4.setBounds(30,127, 150,30);
-
                 JTextField F_ISBN = new JTextField();
                 F_ISBN.setBounds(110, 15, 200, 30);
 
@@ -377,11 +470,7 @@ public class AdminMenu {
                 JTextField F_uid=new JTextField();
                 F_uid.setBounds(110, 53, 200, 30);
 
-                JTextField F_period=new JTextField();
-                F_period.setBounds(110, 90, 200, 30);
 
-                //JTextField F_issue=new JTextField();
-                //F_issue.setBounds(180, 130, 130, 30);
 
 
                 JButton create_but=new JButton("Submit");//creating instance of JButton
@@ -390,49 +479,175 @@ public class AdminMenu {
 
                     public void actionPerformed(ActionEvent e){
 
-                        String uid = F_uid.getText();
+                        String uidStr = F_uid.getText();
                         String ISBN = F_ISBN.getText();
-                        String period = F_period.getText();
-
-                        Calendar calendar = Calendar.getInstance();
-                        Date todayDate = (Date) calendar.getTime();
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
-                        String todayDateString = dateFormat.format(todayDate);
-
-                        JTextField F_issue = new JTextField(todayDateString);
-                        F_issue.setBounds(180, 130, 130, 30);
-
-                        int period_int = Integer.parseInt(period);
-
                         Connection connection = connect();
+                        // Split the ISBN string by comma
+                        String[] isbnArray = ISBN.split(",");
+                        if(isbnArray.length>3)
+                            JOptionPane.showMessageDialog(null, "More than 3 books cannot be selected", "Book Unavailable", JOptionPane.WARNING_MESSAGE);
 
+
+                        // Create an array to store ISBNs with a maximum size of 3
+                        String[] limitedIsbnArray = new String[3];
+                        int availability;
+                        Statement stmt = null;
                         try {
-                            Statement stmt = connection.createStatement();
-                            stmt.executeUpdate("USE LIBRARY");
-                            stmt.executeUpdate("INSERT INTO ISSUED(UID,ISBN,ISSUED_DATE,PERIOD) VALUES ('"+uid+"','"+ISBN+"','"+todayDateString+"',"+period_int+")");
-                            JOptionPane.showMessageDialog(null,"Book Issued!");
-                            g.dispose();
-
+                            stmt = connection.createStatement();
+                        } catch (SQLException ex) {
+                            throw new RuntimeException(ex);
                         }
 
-                        catch (SQLException e1) {
-                            // TODO Auto-generated catch block
-                            JOptionPane.showMessageDialog(null, e1);
+                        // Copy at most 3 ISBNs to the limitedIsbnArray
+                        for (int i = 0; i < Math.min(3, isbnArray.length); i++) {
+                            limitedIsbnArray[i] = isbnArray[i].trim(); // Trim to remove leading/trailing spaces
+                            System.out.println(limitedIsbnArray[i]);
+                            ResultSet bookResultSet = null;
+                            try {
+                                try {
+                                    stmt = connection.createStatement();
+                                } catch (SQLException ex) {
+                                    throw new RuntimeException(ex);
+                                }
+                                stmt.executeUpdate("USE LIBRARY");
+
+                                //CHECK IF BOOK IS AVAILABLE
+                                bookResultSet = stmt.executeQuery("SELECT AVAILABILITY FROM BOOK WHERE ISBN = '" + limitedIsbnArray[i] + "'");
+
+                                // Check if the ResultSet has any rows
+                                if (bookResultSet.next()) {
+                                    availability = bookResultSet.getInt("AVAILABILITY");
+
+                                    if (availability == 0) {
+                                        JOptionPane.showMessageDialog(null, limitedIsbnArray[i] + " Book Not Available", "Book Unavailable", JOptionPane.WARNING_MESSAGE);
+                                    }
+                                } else {
+                                    // Handle the case where the ISBN is not found in the database
+                                    JOptionPane.showMessageDialog(null, limitedIsbnArray[i] + " ISBN Not Found", "ISBN Not Found", JOptionPane.WARNING_MESSAGE);
+                                }
+                            } catch (SQLException ex) {
+                                throw new RuntimeException(ex);
+                            } finally {
+                                // Close the ResultSet and statement in a finally block
+                                if (bookResultSet != null) {
+                                    try {
+                                        bookResultSet.close();
+                                    } catch (SQLException Q) {
+                                        Q.printStackTrace();
+                                    }
+                                }
+                            }
+                        }
+
+                        String borrowerInsertQuery = "INSERT INTO BORROWER (CARDID, SSN, BNAME, ADDRESS, PHONE_NUMBER) VALUES (?, ?, ?, ?, ?)";
+                        PreparedStatement borrowerStatement = null;
+                        try {
+                            borrowerStatement = connection.prepareStatement(borrowerInsertQuery);
+                        } catch (SQLException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                        // ... (previous code)
+
+                        try (CSVReader csvReader = new CSVReader(new FileReader(borrower))) {
+                            String[] headers = csvReader.readNext(); // Assuming the first row contains headers
+
+                            String[] nextRecord;
+                            boolean cardIdExists = false;
+
+                            // Check if the CARDID already exists in the BORROWER table
+                            PreparedStatement checkCardIdStatement = connection.prepareStatement("SELECT COUNT(*) FROM BORROWER WHERE CARDID = ?");
+                            checkCardIdStatement.setString(1, uidStr);
+
+                            ResultSet existingCardIdResult = checkCardIdStatement.executeQuery();
+                            if (existingCardIdResult.next()) {
+                                int count = existingCardIdResult.getInt(1);
+                                cardIdExists = (count > 0);
+                            }
+
+                            if (!cardIdExists) {
+                                // CARDID doesn't exist, proceed to insert into BORROWER table
+                                while ((nextRecord = csvReader.readNext()) != null) {
+                                    String csvCardId = nextRecord[0];
+
+                                    // Check if the current row's cardId matches the required cardId
+                                    if (Objects.equals(csvCardId, uidStr)) {
+                                        // Extract other details from the CSV row
+                                        String ssn = nextRecord[1];
+                                        String name = nextRecord[2] + " " + nextRecord[3]; // Concatenate first_name and last_name
+                                        String address = nextRecord[5];
+                                        String phoneNumber = nextRecord[8];
+
+                                        borrowerStatement.setString(1, csvCardId);
+                                        borrowerStatement.setString(2, ssn); // Sample SSN
+                                        borrowerStatement.setString(3, name); // Sample Borrower Name
+                                        borrowerStatement.setString(4, address); // Sample Address
+                                        borrowerStatement.setString(5, phoneNumber); // Sample Phone Number
+
+                                        borrowerStatement.executeUpdate();
+
+                                        break;
+                                    }
+                                }
+                            }
+                        } catch (CsvValidationException | IOException | SQLException ex) {
+                            throw new RuntimeException(ex);
+                        }
+
+                        // Define a counter to keep track of the number of books borrowed by the user
+                        int booksBorrowed = 0;
+
+                        for (int i = 0; i < limitedIsbnArray.length; i++) {
+                            if (limitedIsbnArray[i] != null) {
+                                try {
+                                    // Check the number of books borrowed by the user
+                                    stmt.executeUpdate("USE LIBRARY");
+                                    PreparedStatement countBooksStatement = connection.prepareStatement("SELECT COUNT(*) FROM BOOK_LOANS WHERE CARDID = ?");
+                                    countBooksStatement.setString(1, uidStr);
+                                    ResultSet countResult = countBooksStatement.executeQuery();
+
+                                    if (countResult.next()) {
+                                        booksBorrowed = countResult.getInt(1);
+                                    }
+
+                                    if (booksBorrowed == 3) {
+                                        // Display a message if the user has already borrowed 3 books
+                                        JOptionPane.showMessageDialog(null, "The user already has 3 books borrowed.", "Limit Exceeded", JOptionPane.WARNING_MESSAGE);
+                                    } else {
+                                        // Update availability to 0
+                                        try {
+                                            stmt.executeUpdate("UPDATE BOOK SET AVAILABILITY = 0 WHERE ISBN = '" + ISBN + "'");
+                                        } catch (SQLException ex) {
+                                            throw new RuntimeException(ex);
+                                        }
+                                        // Add an entry to the LOAN table if the user has less than 3 books borrowed
+                                        PreparedStatement loanStatement = connection.prepareStatement("INSERT INTO BOOK_LOANS (ISBN, CARDID,DUE_DATE, ISSUED_DATE) VALUES (?, ?, ?, ?)");
+                                        loanStatement.setString(1, limitedIsbnArray[i]);
+                                        loanStatement.setString(2, uidStr);
+
+                                        // Get current date and 14 days later date
+                                        LocalDate currentDate = LocalDate.now();
+                                        LocalDate dueDate = currentDate.plusDays(14);
+
+                                        loanStatement.setDate(4, Date.valueOf(currentDate));
+                                        loanStatement.setDate(3, Date.valueOf(dueDate));
+
+                                        loanStatement.executeUpdate();
+                                    }
+                                } catch (SQLException ex) {
+                                    throw new RuntimeException(ex);
+                                }
+                            }
                         }
 
                     }
+                    });
 
-                });
 
-
-                g.add(l3);
-                g.add(l4);
                 g.add(create_but);
                 g.add(l1);
                 g.add(l2);
                 g.add(F_uid);
                 g.add(F_ISBN);
-                g.add(F_period);
                 //g.add(F_issue);
                 g.setSize(350,250);//400 width and 500 height
                 g.setLayout(null);//using no layout managers
@@ -454,105 +669,59 @@ public class AdminMenu {
                 //g.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 //set labels
                 JLabel l1,l2,l3,l4;
-                l1=new JLabel("Issue ID(IID)");  //Label 1 for Issue ID
+                l1=new JLabel("ISBN)");  //Label 1 for Issue ID
                 l1.setBounds(30,15, 100,30);
 
 
-                l4=new JLabel("Return Date(DD-MM-YYYY)");
+                l4=new JLabel("CARD NUMBER");
                 l4.setBounds(30,50, 150,30);
 
-                JTextField F_iid = new JTextField();
-                F_iid.setBounds(110, 15, 200, 30);
+                JTextField ISBN = new JTextField();
+                ISBN.setBounds(110, 15, 200, 30);
 
 
-                JTextField F_return=new JTextField();
-                F_return.setBounds(180, 50, 130, 30);
+                JTextField CARDID=new JTextField();
+                CARDID.setBounds(180, 50, 130, 30);
 
 
                 JButton create_but=new JButton("Return");//creating instance of JButton to mention return date and calculcate fine
                 create_but.setBounds(130,170,80,25);//x axis, y axis, width, height
                 create_but.addActionListener(new ActionListener() {
 
-                    public void actionPerformed(ActionEvent e){
+                    public void actionPerformed(ActionEvent e) {
 
-                        String iid = F_iid.getText();
-                        String return_date = F_return.getText();
+                        String isbn = ISBN.getText();
+                        String cardid = CARDID.getText();
 
                         Connection connection = connect();
-
                         try {
+                            // Get current date
+                            LocalDate currentDate = LocalDate.now();
+
+                            // Update the tuple in BOOK_LOANS based on ISBN for RETURN_DATE
                             Statement stmt = connection.createStatement();
                             stmt.executeUpdate("USE LIBRARY");
-                            //Intialize date1 with NULL value
-                            String date1=null;
-                            String date2=return_date; //Intialize date2 with return date
+                            PreparedStatement updateStatement = connection.prepareStatement("UPDATE BOOK_LOANS SET RETURN_DATE = ? WHERE ISBN = '"+ isbn +"' OR CARDID = '"+cardid+"'");
+                            updateStatement.setDate(1, Date.valueOf(currentDate));
+                            // Execute the update
+                            int rowsAffected = updateStatement.executeUpdate();
 
-                            //select issue date
-                            ResultSet rs = stmt.executeQuery("SELECT ISSUED_DATE FROM ISSUED WHERE IID="+iid);
-                            while (rs.next()) {
-                                date1 = rs.getString(1);
-
+                            if (rowsAffected > 0) {
+                                System.out.println("Successfully updated return date for the tuple.");
+                            } else {
+                                System.out.println("Tuple not found or no changes made.");
                             }
-
-                            try {
-                                Date date_1= (Date) new SimpleDateFormat("dd-MM-yyyy").parse(date1);
-                                Date date_2= (Date) new SimpleDateFormat("dd-MM-yyyy").parse(date2);
-                                //subtract the dates and store in diff
-                                long diff = date_2.getTime() - date_1.getTime();
-                                //Convert diff from milliseconds to days
-                                Main.ex.days=(int)(TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS));
-
-
-                            } catch (ParseException e1) {
-                                // TODO Auto-generated catch block
-                                e1.printStackTrace();
-                            }
-
-
-                            //update return date
-                            stmt.executeUpdate("UPDATE ISSUED SET RETURN_DATE='"+return_date+"' WHERE IID="+iid);
-                            g.dispose();
-
-
-                            Connection connection1 = connect();
-                            Statement stmt1 = connection1.createStatement();
-                            stmt1.executeUpdate("USE LIBRARY");
-                            ResultSet rs1 = stmt1.executeQuery("SELECT PERIOD FROM ISSUED WHERE IID="+iid); //set period
-                            String diff=null;
-                            while (rs1.next()) {
-                                diff = rs1.getString(1);
-
-                            }
-                            int diff_int = Integer.parseInt(diff);
-                            if (Main.ex.days > diff_int)  { //If number of days are more than the period then calculcate fine
-
-                                //System.out.println(ex.days);
-                                int fine = (Main.ex.days-diff_int)*10; //fine for every day after the period is Rs 10.
-                                //update fine in the system
-                                stmt1.executeUpdate("UPDATE ISSUED SET FINE="+fine+" WHERE IID="+iid);
-                                String fine_str = ("Fine: Rs. "+fine);
-                                JOptionPane.showMessageDialog(null,fine_str);
-
-                            }
-
-                            JOptionPane.showMessageDialog(null,"Book Returned!");
-
+                        } catch (SQLException ex) {
+                            throw new RuntimeException(ex);
                         }
-
-
-                        catch (SQLException e1) {
-                            // TODO Auto-generated catch block
-                            JOptionPane.showMessageDialog(null, e1);
-                        }
-
                     }
 
                 });
                 g.add(l4);
                 g.add(create_but);
                 g.add(l1);
-                g.add(F_iid);
-                g.add(F_return);
+                g.add(ISBN);
+                g.add(CARDID);
                 g.setSize(350,250);//400 width and 500 height
                 g.setLayout(null);//using no layout managers
                 g.setVisible(true);//making the frame visible
@@ -568,7 +737,7 @@ public class AdminMenu {
         f.add(users_but);
         f.add(view_but);
         f.add(add_user);
-        f.setSize(600,200);//400 width and 500 height
+        f.setSize(1000,600);//400 width and 500 height
         f.setLayout(null);//using no layout managers
         f.setVisible(true);//making the frame visible
         f.setLocationRelativeTo(null);

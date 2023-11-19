@@ -24,7 +24,7 @@ public class AdminMenu {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             //System.out.println("Loaded driver");
-            Connection con = DriverManager.getConnection("jdbc:mysql://localhost/mysql?user=root&password=950958Gaurav@");
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost/mysql?user=root&password=root");
             //System.out.println("Connected to MySQL");
             return con;
         }
@@ -38,7 +38,7 @@ public class AdminMenu {
         String borrower = "/Users/gauravsharma/Desktop/DATABASE PROJECT/borrowers.csv"; // Provide the path to your CSV file
         String jdbcURL = "jdbc:mysql://localhost/LIBRARY"; // Update with your database URL
         String username = "root"; // Update with your database username
-        String password = "950958Gaurav@"; // Update with your database password
+        String password = "root"; // Update with your database password
         Connection connection=connect();
 
 

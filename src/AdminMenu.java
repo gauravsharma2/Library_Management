@@ -161,7 +161,7 @@ public class AdminMenu {
                                                      "FROM LIBRARY.BOOK B " +
                                                      "LEFT JOIN LIBRARY.BOOK_AUTHORS BA ON B.ISBN = BA.ISBN " +
                                                      "LEFT JOIN LIBRARY.AUTHORS A ON BA.AuthorID = A.AuthorID " +
-                                                     "WHERE B.AVAILABILITY = 0 " +
+                                                     "WHERE B.AVAILABILITY < 2 " +
                                                      "GROUP BY B.ISBN, B.BTITLE, B.AVAILABILITY";
                                              try {
                                                  Statement stmt = connection.createStatement();
@@ -527,129 +527,165 @@ public class AdminMenu {
                                 } catch (SQLException ex) {
                                     throw new RuntimeException(ex);
                                 }
-                                stmt.executeUpdate("USE LIBRARY");
+                                try {
+                                    stmt.executeUpdate("USE LIBRARY");
+                                } catch (SQLException ex) {
+                                    throw new RuntimeException(ex);
+                                }
 
                                 //CHECK IF BOOK IS AVAILABLE
-                                bookResultSet = stmt.executeQuery("SELECT AVAILABILITY FROM BOOK WHERE ISBN = '" + limitedIsbnArray[i] + "'");
+                                try {
+                                    bookResultSet = stmt.executeQuery("SELECT AVAILABILITY FROM BOOK WHERE ISBN = '" + limitedIsbnArray[i] + "'");
+                                } catch (SQLException ex) {
+                                    throw new RuntimeException(ex);
+                                }
 
                                 // Check if the ResultSet has any rows
-                                if (bookResultSet.next()) {
-                                    availability = bookResultSet.getInt("AVAILABILITY");
+                                try {
+                                    if (bookResultSet.next()) {
+                                        availability = bookResultSet.getInt("AVAILABILITY");
 
-                                    if (availability == 0) {
-                                        JOptionPane.showMessageDialog(null, limitedIsbnArray[i] + " Book Not Available", "Book Unavailable", JOptionPane.WARNING_MESSAGE);
-                                    }
-                                    else {
-                                        String borrowerInsertQuery = "INSERT INTO BORROWER (CARDID, SSN, BNAME, ADDRESS, PHONE_NUMBER) VALUES (?, ?, ?, ?, ?)";
-                                        PreparedStatement borrowerStatement = null;
-                                        try {
-                                            borrowerStatement = connection.prepareStatement(borrowerInsertQuery);
-                                        } finally {}
+                                        if (availability == 0) {
+                                            JOptionPane.showMessageDialog(null, limitedIsbnArray[i] + " Book Not Available", "Book Unavailable", JOptionPane.WARNING_MESSAGE);
+                                        } else {
+                                            try {
+                                                PreparedStatement statement = null;
+                                                ResultSet resultSet = null;
+                                                boolean isOccupied = false;
 
-                                        try (CSVReader csvReader = new CSVReader(new FileReader(borrower))) {
-                                            String[] headers = csvReader.readNext(); // Assuming the first row contains headers
+                                                // Check if the ISBN is already present for the given CARD_ID in BOOK_LOANS
+                                                String query = "SELECT * FROM BOOK_LOANS WHERE ISBN = ? AND CARDID = ?";
+                                                statement = connection.prepareStatement(query);
+                                                statement.setString(1, limitedIsbnArray[i]);
+                                                statement.setString(2, uidStr);
+                                                resultSet = statement.executeQuery();
 
-                                            String[] nextRecord;
-                                            boolean cardIdExists = false;
-
-                                            // Check if the CARDID already exists in the BORROWER table
-                                            PreparedStatement checkCardIdStatement = connection.prepareStatement("SELECT COUNT(*) FROM BORROWER WHERE CARDID = ?");
-                                            checkCardIdStatement.setString(1, uidStr);
-
-                                            ResultSet existingCardIdResult = checkCardIdStatement.executeQuery();
-                                            if (existingCardIdResult.next()) {
-                                                int count = existingCardIdResult.getInt(1);
-                                                cardIdExists = (count > 0);
-                                            }
-
-                                            if (!cardIdExists) {
-                                                // CARDID doesn't exist, proceed to insert into BORROWER table
-                                                while ((nextRecord = csvReader.readNext()) != null) {
-                                                    String csvCardId = nextRecord[0];
-
-                                                    // Check if the current row's cardId matches the required cardId
-                                                    if (Objects.equals(csvCardId, uidStr)) {
-                                                        // Extract other details from the CSV row
-                                                        String ssn = nextRecord[1];
-                                                        String name = nextRecord[2] + " " + nextRecord[3]; // Concatenate first_name and last_name
-                                                        String address = nextRecord[5];
-                                                        String phoneNumber = nextRecord[8];
-
-                                                        borrowerStatement.setString(1, csvCardId);
-                                                        borrowerStatement.setString(2, ssn); // Sample SSN
-                                                        borrowerStatement.setString(3, name); // Sample Borrower Name
-                                                        borrowerStatement.setString(4, address); // Sample Address
-                                                        borrowerStatement.setString(5, phoneNumber); // Sample Phone Number
-
-                                                        borrowerStatement.executeUpdate();
-
-                                                        break;
-                                                    }
+                                                // If there are results, the book is already occupied
+                                                if (resultSet.next()) {
+                                                    isOccupied = true;
                                                 }
-                                            }
-                                        } catch (CsvValidationException | IOException | SQLException ex) {
-                                            throw new RuntimeException(ex);
-                                        }
-
-                                        // Define a counter to keep track of the number of books borrowed by the user
-                                        int booksBorrowed = 0;
-                                            if (limitedIsbnArray[i] != null) {
-                                                try {
-                                                    // Check the number of books borrowed by the user
-                                                    stmt.executeUpdate("USE LIBRARY");
-                                                    PreparedStatement countBooksStatement = connection.prepareStatement("SELECT COUNT(*) FROM BOOK_LOANS WHERE CARDID = ?");
-                                                    countBooksStatement.setString(1, uidStr);
-                                                    ResultSet countResult = countBooksStatement.executeQuery();
-
-                                                    if (countResult.next()) {
-                                                        booksBorrowed = countResult.getInt(1);
+                                                if (isOccupied) {
+                                                    JOptionPane.showMessageDialog(null, "The book is already occupied.");
+                                                    // Show pop-up or message dialog here with appropriate message
+                                                } else {
+                                                    String borrowerInsertQuery = "INSERT INTO BORROWER (CARDID, SSN, BNAME, ADDRESS, PHONE_NUMBER) VALUES (?, ?, ?, ?, ?)";
+                                                    PreparedStatement borrowerStatement = null;
+                                                    try {
+                                                        borrowerStatement = connection.prepareStatement(borrowerInsertQuery);
+                                                    } finally {
                                                     }
 
-                                                    if (booksBorrowed >= 3) {
-                                                        // Display a message if the user has already borrowed 3 books
-                                                        JOptionPane.showMessageDialog(null, "The user already has 3 books borrowed.", "Limit Exceeded", JOptionPane.WARNING_MESSAGE);
-                                                    } else {
-                                                        // Update availability to 0
+                                                    try (CSVReader csvReader = new CSVReader(new FileReader(borrower))) {
+                                                        String[] headers = csvReader.readNext(); // Assuming the first row contains headers
+
+                                                        String[] nextRecord;
+                                                        boolean cardIdExists = false;
+
+                                                        // Check if the CARDID already exists in the BORROWER table
+                                                        PreparedStatement checkCardIdStatement = connection.prepareStatement("SELECT COUNT(*) FROM BORROWER WHERE CARDID = ?");
+                                                        checkCardIdStatement.setString(1, uidStr);
+
+                                                        ResultSet existingCardIdResult = checkCardIdStatement.executeQuery();
+                                                        if (existingCardIdResult.next()) {
+                                                            int count = existingCardIdResult.getInt(1);
+                                                            cardIdExists = (count > 0);
+                                                        }
+
+                                                        if (!cardIdExists) {
+                                                            // CARDID doesn't exist, proceed to insert into BORROWER table
+                                                            while ((nextRecord = csvReader.readNext()) != null) {
+                                                                String csvCardId = nextRecord[0];
+
+                                                                // Check if the current row's cardId matches the required cardId
+                                                                if (Objects.equals(csvCardId, uidStr)) {
+                                                                    // Extract other details from the CSV row
+                                                                    String ssn = nextRecord[1];
+                                                                    String name = nextRecord[2] + " " + nextRecord[3]; // Concatenate first_name and last_name
+                                                                    String address = nextRecord[5];
+                                                                    String phoneNumber = nextRecord[8];
+
+                                                                    borrowerStatement.setString(1, csvCardId);
+                                                                    borrowerStatement.setString(2, ssn); // Sample SSN
+                                                                    borrowerStatement.setString(3, name); // Sample Borrower Name
+                                                                    borrowerStatement.setString(4, address); // Sample Address
+                                                                    borrowerStatement.setString(5, phoneNumber); // Sample Phone Number
+
+                                                                    borrowerStatement.executeUpdate();
+
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                    } catch (CsvValidationException | IOException | SQLException ex) {
+                                                        throw new RuntimeException(ex);
+                                                    }
+                                                    // Define a counter to keep track of the number of books borrowed by the user
+                                                    int booksBorrowed = 0;
+                                                    if (limitedIsbnArray[i] != null) {
                                                         try {
-                                                            stmt.executeUpdate("UPDATE BOOK SET AVAILABILITY = 0 WHERE ISBN = '" + ISBN + "'");
+                                                            // Check the number of books borrowed by the user
+                                                            stmt.executeUpdate("USE LIBRARY");
+                                                            PreparedStatement countBooksStatement = connection.prepareStatement("SELECT COUNT(*) FROM BOOK_LOANS WHERE CARDID = ?");
+                                                            countBooksStatement.setString(1, uidStr);
+                                                            ResultSet countResult = countBooksStatement.executeQuery();
+
+                                                            if (countResult.next()) {
+                                                                booksBorrowed = countResult.getInt(1);
+                                                            }
+
+                                                            if (booksBorrowed >= 3) {
+                                                                // Display a message if the user has already borrowed 3 books
+                                                                JOptionPane.showMessageDialog(null, "The user already has 3 books borrowed.", "Limit Exceeded", JOptionPane.WARNING_MESSAGE);
+                                                            } else {
+                                                                // Update availability to 0
+                                                                try {
+                                                                    stmt.executeUpdate("UPDATE BOOK SET AVAILABILITY = AVAILABILITY - 1 WHERE ISBN = '" + limitedIsbnArray[i] + "'");
+
+                                                                } catch (SQLException ex) {
+                                                                    throw new RuntimeException(ex);
+                                                                }
+                                                                // Add an entry to the LOAN table if the user has less than 3 books borrowed
+                                                                PreparedStatement loanStatement = connection.prepareStatement("INSERT INTO BOOK_LOANS (ISBN, CARDID,DUE_DATE, ISSUED_DATE) VALUES (?, ?, ?, ?)");
+                                                                loanStatement.setString(1, limitedIsbnArray[i]);
+                                                                loanStatement.setString(2, uidStr);
+
+                                                                // Get current date and 14 days later date
+                                                                LocalDate currentDate = LocalDate.now();
+                                                                LocalDate dueDate = currentDate.plusDays(14);
+
+                                                                loanStatement.setDate(4, Date.valueOf(currentDate));
+                                                                loanStatement.setDate(3, Date.valueOf(dueDate));
+
+                                                                loanStatement.executeUpdate();
+                                                            }
                                                         } catch (SQLException ex) {
                                                             throw new RuntimeException(ex);
                                                         }
-                                                        // Add an entry to the LOAN table if the user has less than 3 books borrowed
-                                                        PreparedStatement loanStatement = connection.prepareStatement("INSERT INTO BOOK_LOANS (ISBN, CARDID,DUE_DATE, ISSUED_DATE) VALUES (?, ?, ?, ?)");
-                                                        loanStatement.setString(1, limitedIsbnArray[i]);
-                                                        loanStatement.setString(2, uidStr);
-
-                                                        // Get current date and 14 days later date
-                                                        LocalDate currentDate = LocalDate.now();
-                                                        LocalDate dueDate = currentDate.plusDays(14);
-
-                                                        loanStatement.setDate(4, Date.valueOf(currentDate));
-                                                        loanStatement.setDate(3, Date.valueOf(dueDate));
-
-                                                        loanStatement.executeUpdate();
+                                                    } else {
+                                                        // Handle the case where the ISBN is not found in the database
+                                                        JOptionPane.showMessageDialog(null, limitedIsbnArray[i] + " ISBN Not Found", "ISBN Not Found", JOptionPane.WARNING_MESSAGE);
                                                     }
-                                                } catch (SQLException ex) {
-                                                    throw new RuntimeException(ex);
+
+                                                }
+                                            } catch (SQLException | RuntimeException ex) {
+                                                throw new RuntimeException(ex);
+                                            } finally {
+                                                // Close the ResultSet and statement in a finally block
+                                                try {
+                                                    bookResultSet.close();
+                                                } catch (SQLException Q) {
+                                                    Q.printStackTrace();
                                                 }
                                             }
+
+                                        }
                                     }
-                                } else {
-                                    // Handle the case where the ISBN is not found in the database
-                                    JOptionPane.showMessageDialog(null, limitedIsbnArray[i] + " ISBN Not Found", "ISBN Not Found", JOptionPane.WARNING_MESSAGE);
+                                } catch (SQLException ex) {
+                                    throw new RuntimeException(ex);
                                 }
 
-                            } catch (SQLException | RuntimeException ex) {
+                            } catch (RuntimeException ex) {
                                 throw new RuntimeException(ex);
-                            } finally {
-                                // Close the ResultSet and statement in a finally block
-                                if (bookResultSet != null) {
-                                    try {
-                                        bookResultSet.close();
-                                    } catch (SQLException Q) {
-                                        Q.printStackTrace();
-                                    }
-                                }
                             }
                         }
 
@@ -781,12 +817,18 @@ public class AdminMenu {
                             String selectQuery = "SELECT LOAN_ID, DUE_DATE, RETURN_DATE FROM BOOK_LOANS";
                             selectStatement = connection.prepareStatement(selectQuery);
                             resultSet = selectStatement.executeQuery();
+                            LocalDate dueDate;
 
                             while (resultSet.next()) {
                                 int loanID = resultSet.getInt("LOAN_ID");
-                                LocalDate dueDate = resultSet.getDate("DUE_DATE").toLocalDate();
+                                if(loanID==1)
+                                    dueDate = LocalDate.of(2023, 11, 10);
+                                else {
+                                    dueDate = resultSet.getDate("DUE_DATE").toLocalDate();
+                                }
                                 LocalDate returnDate = resultSet.getDate("RETURN_DATE") != null ?
                                         resultSet.getDate("RETURN_DATE").toLocalDate() : LocalDate.now();
+                                System.out.println(dueDate+"  "+returnDate);
 
                                 long daysDifference = ChronoUnit.DAYS.between(dueDate, returnDate);
                                 double fineAmount = daysDifference * 0.25;

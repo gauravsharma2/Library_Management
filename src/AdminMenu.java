@@ -821,11 +821,11 @@ public class AdminMenu {
 
                             while (resultSet.next()) {
                                 int loanID = resultSet.getInt("LOAN_ID");
-                                if(loanID==1)
-                                    dueDate = LocalDate.of(2023, 11, 10);
-                                else {
+//                                if(loanID==1)
+//                                    dueDate = LocalDate.of(2023, 11, 10);
+//                                else {
                                     dueDate = resultSet.getDate("DUE_DATE").toLocalDate();
-                                }
+                              //  }
                                 LocalDate returnDate = resultSet.getDate("RETURN_DATE") != null ?
                                         resultSet.getDate("RETURN_DATE").toLocalDate() : LocalDate.now();
                                 System.out.println(dueDate+"  "+returnDate);

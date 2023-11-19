@@ -4,6 +4,8 @@ import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import net.proteanit.sql.DbUtils;
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.FileNotFoundException;
@@ -11,6 +13,7 @@ import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.io.BufferedReader;
@@ -278,96 +281,108 @@ public class AdminMenu {
         });
 
 
-       /* JButton add_borrower=new JButton("Add Borrower"); //creating instance of JButton to add users
-        add_user.setBounds(100,400,120,25); //set dimensions for button
+        JButton add_borrower=new JButton("Add Borrower"); //creating instance of JButton to add borrower
+        add_borrower.setBounds(100,250,120,25); //set dimensions for button
 
-        add_user.addActionListener(new ActionListener() {
+        add_borrower.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e){
 
-                JFrame g = new JFrame("Enter User Details"); //Frame to enter user details
+                JFrame g = new JFrame("Enter Borrower Details"); //Frame to enter user details
                 //g.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 //Create label
-                JLabel l1,l2;
-                l1=new JLabel("Username");  //label 1 for username
-                l1.setBounds(30,15, 100,30);
+                JLabel l1,l2,l3;
+                l1=new JLabel("Borower name");  //label 1 for username
+                l1.setBounds(30,15, 150,30);
 
 
-                l2=new JLabel("Password");  //label 2 for password
-                l2.setBounds(30,50, 100,30);
+                l2=new JLabel("SSN");  //label 2 for password
+                l2.setBounds(30,75, 150,30);
+
+                l3=new JLabel("Address");  //label 2 for password
+                l3.setBounds(30,125, 150,30);
 
                 //set text field for username
                 JTextField F_user = new JTextField();
-                F_user.setBounds(110, 15, 200, 30);
+                F_user.setBounds(150, 15, 200, 30);
 
-                //set text field for password
-                JPasswordField F_pass=new JPasswordField();
-                F_pass.setBounds(110, 50, 200, 30);
-                //set radio button for admin
-                JRadioButton a1 = new JRadioButton("Admin");
-                a1.setBounds(55, 80, 200,30);
-                //set radio button for user
-                JRadioButton a2 = new JRadioButton("User");
-                a2.setBounds(130, 80, 200,30);
-                //add radio buttons
-                ButtonGroup bg=new ButtonGroup();
-                bg.add(a1);bg.add(a2);
+                //set text field for username
+                JTextField F_ssn = new JTextField();
+                F_ssn.setBounds(150, 75, 200, 30);
+
+                //set text field for username
+                JTextField F_address = new JTextField();
+                F_address.setBounds(150, 125, 500, 30);
+
+
 
 
                 JButton create_but=new JButton("Create");//creating instance of JButton for Create
                 create_but.setBounds(100,250,80,25);//x axis, y axis, width, height
                 create_but.addActionListener(new ActionListener() {
 
-                    public void actionPerformed(ActionEvent e){
-
+                    public void actionPerformed(ActionEvent e) {
                         String username = F_user.getText();
-                        String password = F_pass.getText();
-                        Boolean admin = false;
-
-                        if(a1.isSelected()) {
-                            admin=true;
-                        }
+                        String ssn = F_ssn.getText();
+                        String address = F_address.getText();
 
                         Connection connection = connect();
 
                         try {
                             Statement stmt = connection.createStatement();
                             stmt.executeUpdate("USE LIBRARY");
-                            stmt.executeUpdate("INSERT INTO USERS(USERNAME,PASSWORD,ADMIN) VALUES ('"+username+"','"+password+"',"+admin+")");
-                            JOptionPane.showMessageDialog(null,"User added!");
-                            g.dispose();
+                            // Check if SSN already exists in the borrower table
+                            PreparedStatement checkStatement = connection.prepareStatement("SELECT * FROM borrower WHERE SSN = ?");
+                            checkStatement.setString(1, ssn);
+                            ResultSet resultSet = checkStatement.executeQuery();
 
-                        }
+                            if (resultSet.next()) {
+                                // SSN exists in the table, show message
+                                JOptionPane.showMessageDialog(null, "SSN already exists in the borrower table.");
+                            } else {
+                                // SSN does not exist, generate unique card ID and insert into the table
+                                PreparedStatement insertStatement = connection.prepareStatement("INSERT INTO borrower (Cardid, BName, SSN, Address) VALUES (?, ?, ?, ?)");
 
-                        catch (SQLException e1) {
-                            // TODO Auto-generated catch block
+                                // Generate a unique card ID (you can implement your logic here)
+                                String cardId = AdminMenu.generateUniqueCardId(connection);
+
+                                insertStatement.setString(1, cardId);
+                                insertStatement.setString(2, username);
+                                insertStatement.setString(3, ssn);
+                                insertStatement.setString(4, address);
+
+                                int rowsAffected = insertStatement.executeUpdate();
+
+                                if (rowsAffected > 0) {
+                                    JOptionPane.showMessageDialog(null, "Borrower added!");
+                                    g.dispose();
+                                }
+                            }
+                        } catch (SQLException e1) {
                             JOptionPane.showMessageDialog(null, e1);
                         }
-
                     }
-
                 });
 
-
                 g.add(create_but);
-                g.add(a2);
-                g.add(a1);
                 g.add(l1);
                 g.add(l2);
+                g.add(l3);
                 g.add(F_user);
-                g.add(F_pass);
-                g.setSize(350,200);//400 width and 500 height
+                g.add(F_ssn);
+                g.add(F_address);
+                g.setSize(900,600);//600 width and 600 height
                 g.setLayout(null);//using no layout managers
                 g.setVisible(true);//making the frame visible
                 g.setLocationRelativeTo(null);
-
-
             }
-        });*/
+
+        });
+
 
 
 
         JButton add_book=new JButton("Add Book"); //creating instance of JButton for adding books
-        add_book.setBounds(100,250,120,25);
+        add_book.setBounds(100,300,120,25);
 
         add_book.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e){
@@ -447,7 +462,7 @@ public class AdminMenu {
 
 
         JButton issue_book=new JButton("Issue Book"); //creating instance of JButton to issue books
-        issue_book.setBounds(100,300,120,25);
+        issue_book.setBounds(100,350,120,25);
 
         issue_book.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e){
@@ -660,7 +675,7 @@ public class AdminMenu {
 
 
         JButton return_book=new JButton("Return Book"); //creating instance of JButton to return books
-        return_book.setBounds(100,350,160,25);
+        return_book.setBounds(100,400,160,25);
 
         return_book.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e){
@@ -729,6 +744,98 @@ public class AdminMenu {
             }
         });
 
+       JButton check_fine=new JButton("CHECK FINE"); //creating instance of JButton to return books
+        check_fine.setBounds(100,450,160,25);
+
+        check_fine.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e){
+
+                JFrame g = new JFrame("Enter ID");
+                //g.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                //set labels
+                JLabel l1;
+                l1=new JLabel("ID)");  //Label 1 for Issue ID
+                l1.setBounds(30,15, 100,30);
+
+
+                JTextField ID=new JTextField();
+                ID.setBounds(110, 15, 130, 30);
+
+
+                JButton create_but=new JButton("CHECK");//creating instance of JButton to mention return date and calculcate fine
+                create_but.setBounds(130,170,80,25);//x axis, y axis, width, height
+                create_but.addActionListener(new ActionListener() {
+
+                    public void actionPerformed(ActionEvent e) {
+
+                        String id = ID.getText();
+                        PreparedStatement selectStatement = null;
+                        PreparedStatement updateStatement = null;
+                        ResultSet resultSet = null;
+
+                        Connection connection = connect();
+                        try {
+
+                            Statement stmt = connection.createStatement();
+                            stmt.executeUpdate("USE LIBRARY");
+                            // SQL query to select relevant book loans
+                            String selectQuery = "SELECT LOAN_ID, DUE_DATE, RETURN_DATE FROM BOOK_LOANS";
+                            selectStatement = connection.prepareStatement(selectQuery);
+                            resultSet = selectStatement.executeQuery();
+
+                            while (resultSet.next()) {
+                                int loanID = resultSet.getInt("LOAN_ID");
+                                LocalDate dueDate = resultSet.getDate("DUE_DATE").toLocalDate();
+                                LocalDate returnDate = resultSet.getDate("RETURN_DATE") != null ?
+                                        resultSet.getDate("RETURN_DATE").toLocalDate() : LocalDate.now();
+
+                                long daysDifference = ChronoUnit.DAYS.between(dueDate, returnDate);
+                                double fineAmount = daysDifference * 0.25;
+
+                                if (fineAmount < 0) {
+                                    fineAmount = 0; // Ensure fine is not negative
+                                }
+
+                                // Update fines table with calculated fine amount
+                                String updateQuery = "INSERT INTO FINES (LOAN_ID, FINE_AMOUNT, PAID) VALUES (?, ?, ?) " +
+                                        "ON DUPLICATE KEY UPDATE FINE_AMOUNT = VALUES(FINE_AMOUNT)";
+                                updateStatement = connection.prepareStatement(updateQuery);
+                                updateStatement.setInt(1, loanID);
+                                updateStatement.setDouble(2, fineAmount);
+                                updateStatement.setBoolean(3, false); // Assuming initially fines are not paid
+
+                                int rowsAffected = updateStatement.executeUpdate();
+                                if (rowsAffected > 0) {
+                                    System.out.println("LoanID: " + loanID + ", Fine Amount: $" + fineAmount);
+                                    // Here you can perform additional actions if needed
+                                }
+                            }
+                        } catch (SQLException q) {
+                            q.printStackTrace();
+                        } finally {
+                            // Close resources in finally block
+                            try {
+                                if (resultSet != null) resultSet.close();
+                                if (selectStatement != null) selectStatement.close();
+                                if (updateStatement != null) updateStatement.close();
+                                if (connection != null) connection.close();
+                            } catch (SQLException ex) {
+                                throw new RuntimeException(ex);
+                            }
+
+                        }
+                        }
+                });
+                g.add(create_but);
+                g.add(l1);
+                g.add(ID);
+                g.setSize(350,250);//400 width and 500 height
+                g.setLayout(null);//using no layout managers
+                g.setVisible(true);//making the frame visible
+                g.setLocationRelativeTo(null);
+            }
+        });
+
         f.add(create_but);
         f.add(return_book);
         f.add(issue_book);
@@ -737,10 +844,34 @@ public class AdminMenu {
         f.add(users_but);
         f.add(view_but);
         f.add(add_user);
+        f.add(add_borrower);
+        f.add(check_fine);
         f.setSize(1000,600);//400 width and 500 height
         f.setLayout(null);//using no layout managers
         f.setVisible(true);//making the frame visible
         f.setLocationRelativeTo(null);
 
+    }
+    public static String generateUniqueCardId(Connection connection) throws SQLException {
+        String uniqueCardId = "";
+        Statement stmt = connection.createStatement();
+        stmt.executeUpdate("USE LIBRARY");
+
+        // Iterate to find a unique ID
+        int idCounter = 1;
+        boolean uniqueIdFound = false;
+        while (!uniqueIdFound) {
+            uniqueCardId = String.format("ID%06d", idCounter);
+
+            // Check if the ID already exists in the borrower table
+            ResultSet resultSet = stmt.executeQuery("SELECT * FROM borrower WHERE Cardid = '" + uniqueCardId + "'");
+            if (!resultSet.next()) {
+                uniqueIdFound = true; // ID is unique
+            } else {
+                idCounter++; // Increment counter for the next iteration
+            }
+        }
+
+        return uniqueCardId;
     }
 }

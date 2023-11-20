@@ -25,19 +25,19 @@ public class Login {
         JFrame f=new JFrame("Login");//creating instance of JFrame
         JLabel l1,l2;
         l1=new JLabel("Username");  //Create label Username
-        l1.setBounds(30,15, 100,30); //x axis, y axis, width, height
+        l1.setBounds(30,20, 100,30); //x axis, y axis, width, height
 
         l2=new JLabel("Password");  //Create label Password
-        l2.setBounds(30,50, 100,30);
+        l2.setBounds(30,70, 100,30);
 
         JTextField F_user = new JTextField(); //Create text field for username
-        F_user.setBounds(110, 15, 200, 30);
+        F_user.setBounds(130, 20, 200, 30);
 
         JPasswordField F_pass=new JPasswordField(); //Create text field for password
-        F_pass.setBounds(110, 50, 200, 30);
+        F_pass.setBounds(130, 70, 200, 30);
 
         JButton login_but=new JButton("Login");//creating instance of JButton for Login Button
-        login_but.setBounds(130,90,80,25);//Dimensions for button
+        login_but.setBounds(130,130,80,25);//Dimensions for button
         login_but.addActionListener(new ActionListener() {  //Perform action
 
             public void actionPerformed(ActionEvent e){
@@ -98,7 +98,7 @@ public class Login {
         f.add(l1);  // add label1 i.e. for username
         f.add(l2); // add label2 i.e. for password
 
-        f.setSize(500,500);//400 width and 500 height
+        f.setSize(400,300);//400 width and 500 height
         f.setLayout(null);//using no layout managers
         f.setVisible(true);//making the frame visible
         f.setLocationRelativeTo(null);

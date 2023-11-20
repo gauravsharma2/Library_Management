@@ -399,21 +399,21 @@ public class AdminMenu {
 
                 //set text field for book name
                 JTextField F_ISBN = new JTextField();
-                F_ISBN.setBounds(110, 15, 200, 30);
+                F_ISBN.setBounds(150, 15, 200, 30);
 
                 //set text field for BAUTHOR
                 JTextField F_BTITLE=new JTextField();
-                F_BTITLE.setBounds(110, 53, 200, 30);
+                F_BTITLE.setBounds(150, 53, 200, 30);
                 //set text field for AVAILABILITY
                 JTextField F_AVAILABILITY=new JTextField();
-                F_AVAILABILITY.setBounds(110, 90, 200, 30);
+                F_AVAILABILITY.setBounds(150, 90, 200, 30);
 
                 JTextField F_BAUTHOR=new JTextField();
-                F_BAUTHOR.setBounds(110, 130, 200, 30);
+                F_BAUTHOR.setBounds(150, 130, 200, 30);
 
 
                 JButton create_but=new JButton("Submit");//creating instance of JButton to submit details
-                create_but.setBounds(130,130,80,25);//x axis, y axis, width, height
+                create_but.setBounds(140,200,80,25);//x axis, y axis, width, height
                 create_but.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e){
@@ -431,7 +431,16 @@ public class AdminMenu {
                             Statement stmt = connection.createStatement();
                             stmt.executeUpdate("USE LIBRARY");
                             stmt.executeUpdate("INSERT INTO BOOK(BTITLE,ISBN,AVAILABILITY) VALUES ('"+BTITLE+"','"+ISBN+"',"+AVAILABILITY_int+")");
-                            stmt.executeUpdate("INSERT INTO AUTHORS(NAME) VALUES ("+BAUTHOR+")");
+                            String insertQuery = "INSERT INTO AUTHORS(NAME) VALUES (?)";
+
+                            try (PreparedStatement pstmt = connection.prepareStatement(insertQuery)) {
+                                pstmt.setString(1, BAUTHOR); // Set the value for the parameter
+                                pstmt.executeUpdate(); // Execute the update
+                            }
+                            catch (SQLException W) {
+                                // Handle any potential exceptions
+                                W.printStackTrace();
+                            }
                             JOptionPane.showMessageDialog(null,"Book added!");
                             g.dispose();
 
@@ -455,7 +464,7 @@ public class AdminMenu {
                 g.add(F_ISBN);
                 g.add(F_BAUTHOR);
                 g.add(F_AVAILABILITY);
-                g.setSize(350,200);//400 width and 500 height
+                g.setSize(500,500);//400 width and 500 height
                 g.setLayout(null);//using no layout managers
                 g.setVisible(true);//making the frame visible
                 g.setLocationRelativeTo(null);

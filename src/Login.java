@@ -1,11 +1,157 @@
 // Press Shift twice to open the Search Everywhere dialog and type `show whitespaces`,
 // then press Enter. You can now see whitespace characters in your
-import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.sql.*;
 
-public class Login {
+import com.opencsv.CSVParser;
+import com.opencsv.CSVParserBuilder;
+import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
+import com.opencsv.exceptions.CsvValidationException;
+
+import java.io.FileReader;
+import java.io.IOException;
+import java.sql.*;
+import java.util.HashMap;
+import java.util.HashSet;
+
+public class Main {
+
+    public static class ex {
+        public static int days = 0;
+    }
+
+    public static void main(String[] args) throws SQLException {
+        Login.login();
+        Create.create();
+        ExcelToDatabaseLoader();
+    }
+
+    public static void ExcelToDatabaseLoader() throws SQLException {
+        String csvFilePath = "/Users/gauravsharma/Desktop/DATABASE PROJECT/books.csv"; // Provide the path to your CSV file
+        //String borrower = "/Users/gauravsharma/Desktop/DATABASE PROJECT/borrowers.csv"; // Provide the path to your CSV file
+        String jdbcURL = "jdbc:mysql://localhost/LIBRARY"; // Update with your database URL
+        String username = "root"; // Update with your database username
+        String password = "root"; // Update with your database password
+
+        Connection connection=connect();
+        Statement stmt = connection.createStatement();
+        ResultSet resultSet = connection.getMetaData().getCatalogs();
+
+        int batchSize = 20;
+        // connection = null;
+        HashMap<String, Integer> authorIds = new HashMap<>(); // To store AuthorID for each author name
+        int authorIdCounter = 1; // Counter for generating unique AuthorID
+
+        try {
+            long start = System.currentTimeMillis();
+
+            // Create a CSVReader with custom settings
+            CSVParser csvParser = new CSVParserBuilder().withSeparator('\t').withIgnoreQuotations(true).build();
+            CSVReader csvReader = new CSVReaderBuilder(new FileReader(csvFilePath))
+                    .withCSVParser(csvParser)
+                    .withSkipLines(1) // Skip the header row
+                    .build();
+
+            connection = DriverManager.getConnection(jdbcURL, username, password);
+            connection.setAutoCommit(false);
+
+            String sql = "INSERT INTO BOOK (ISBN, BTITLE) VALUES (?, ?)";
+            PreparedStatement bookStatement = connection.prepareStatement(sql);
+
+            String authorSql = "INSERT INTO AUTHORS (Name) VALUES (?)";
+            PreparedStatement authorStatement = connection.prepareStatement(authorSql, Statement.RETURN_GENERATED_KEYS);
+
+            String bookauthorSql = "INSERT INTO BOOK_AUTHORS (AuthorID,ISBN) VALUES (?,?)";
+            PreparedStatement bookauthorStatement = connection.prepareStatement(bookauthorSql);
+            int count = 0;
+
+            String[] nextRecord;
+
+            // Create a HashSet to store unique combinations of ISBN and AuthorID
+            HashSet<String> uniqueEntries = new HashSet<>();
+
+            while ((nextRecord = csvReader.readNext()) != null) {
+                String isbn = nextRecord[1]; // Assuming ISBN is in the second column (0-based index)
+                String title = nextRecord[2]; // Assuming book title is in the third column (0-based index)
+                String[] authorsArray = nextRecord[3].split("[,;:]");
+
+                for (String authorName : authorsArray) {
+                    authorStatement.setString(1, authorName);
+                    authorStatement.addBatch();
+                }
+
+                for (String authorName : authorsArray) {
+                    String trimmedAuthorName = authorName.trim();
+
+                    if (!authorIds.containsKey(trimmedAuthorName)) {
+                        authorIds.put(trimmedAuthorName, authorIdCounter);
+                        authorIdCounter++;
+                    }
+                    int authorId = authorIds.get(trimmedAuthorName);
+
+                    // Check if the combination of ISBN and AuthorID already exists
+                    String combinedKey = isbn + "-" + authorId;
+                    if (!uniqueEntries.contains(combinedKey)) {
+                        uniqueEntries.add(combinedKey);
+
+                        // Insert into BOOK_AUTHORS table
+                        bookauthorStatement.setInt(1, authorId);
+                        bookauthorStatement.setString(2, isbn);
+                        bookauthorStatement.addBatch();
+                    }
+                }
+
+                bookauthorStatement.setString(1, isbn);
+
+                // Insert book
+                boolean bookExists = checkIfBookExists(connection, isbn);
+                if (!bookExists) {
+                    bookStatement.setString(1, isbn);
+                    bookStatement.setString(2, title);
+                    bookStatement.addBatch();
+                }
+
+                if (++count % batchSize == 0) {
+                    bookStatement.executeBatch();
+                    authorStatement.executeBatch();
+                    bookauthorStatement.executeBatch();
+                    connection.commit();
+                }
+            }
+
+
+            bookStatement.executeBatch();
+            authorStatement.executeBatch();
+            bookauthorStatement.executeBatch();
+
+
+
+            connection.commit();
+            connection.close();
+
+            long end = System.currentTimeMillis();
+            System.out.printf("Import done in %d ms\n", (end - start));
+        } catch (IOException ex1) {
+            System.out.println("Error reading file");
+            ex1.printStackTrace();
+        } catch (SQLException ex2) {
+            System.out.println("Database error");
+            ex2.printStackTrace();
+        } catch (CsvValidationException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    private static boolean checkIfBookExists(Connection connection, String isbn) throws SQLException {
+        String query = "SELECT ISBN FROM BOOK WHERE ISBN = ?";
+        PreparedStatement statement = connection.prepareStatement(query);
+        statement.setString(1, isbn);
+
+        ResultSet resultSet = statement.executeQuery();
+        return resultSet.next(); // Returns true if a record with the ISBN exists
+    }
+
     public static Connection connect()
     {
         try {
@@ -20,88 +166,5 @@ public class Login {
         }
         return null;
     }
-    public static void login() {
-
-        JFrame f=new JFrame("Login");//creating instance of JFrame
-        JLabel l1,l2;
-        l1=new JLabel("Username");  //Create label Username
-        l1.setBounds(30,20, 100,30); //x axis, y axis, width, height
-
-        l2=new JLabel("Password");  //Create label Password
-        l2.setBounds(30,70, 100,30);
-
-        JTextField F_user = new JTextField(); //Create text field for username
-        F_user.setBounds(130, 20, 200, 30);
-
-        JPasswordField F_pass=new JPasswordField(); //Create text field for password
-        F_pass.setBounds(130, 70, 200, 30);
-
-        JButton login_but=new JButton("Login");//creating instance of JButton for Login Button
-        login_but.setBounds(130,130,80,25);//Dimensions for button
-        login_but.addActionListener(new ActionListener() {  //Perform action
-
-            public void actionPerformed(ActionEvent e){
-
-                String username = F_user.getText(); //Store username entered by the user in the variable "username"
-                String password = F_pass.getText(); //Store password entered by the user in the variable "password"
-
-                if(username.isEmpty()) //If username is null
-                {
-                    JOptionPane.showMessageDialog(null,"Please enter username"); //Display dialog box with the message
-                }
-                else if(password.isEmpty()) //If password is null
-                {
-                    JOptionPane.showMessageDialog(null,"Please enter password"); //Display dialog box with the message
-                }
-                else { //If both the fields are present then to login the user, check whether the user exists already
-                    //System.out.println("Login connect");
-                    try (Connection connection = connect()) {
-                        try {
-                            assert connection != null;
-                            Statement stmt = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-                            stmt.executeUpdate("USE LIBRARY"); //Use the database with the name "Library"
-                            String st = ("SELECT * FROM USERS WHERE USERNAME='" + username + "' AND PASSWORD='" + password + "'"); //Retreive username and passwords from users
-                            ResultSet rs = stmt.executeQuery(st); //Execute query
-                            if (rs.next() == false) { //Move pointer below
-                                System.out.print("No user");
-                                JOptionPane.showMessageDialog(null, "Wrong Username/Password!"); //Display Message
-
-                            } else {
-                                f.dispose();
-                                rs.beforeFirst();  //Move the pointer above
-                                while (rs.next()) {
-                                    String admin = rs.getString("ADMIN"); //user is admin
-                                    //System.out.println(admin);
-                                    String UID = rs.getString("USERNAME"); //Get user ID of the user
-                                    if (admin.equals("1")) { //If boolean value 1
-                                        AdminMenu.admin_menu(); //redirect to admin menu
-                                    } else {
-                                        UserMenu.user_menu(UID);//redirect to user menu for that user ID
-                                    }
-                                }
-                            }
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                    }  //Connect to the database
-                    catch (SQLException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }
-            }
-        });
-
-
-        f.add(F_pass); //add password
-        f.add(login_but);//adding button in JFrame
-        f.add(F_user);  //add user
-        f.add(l1);  // add label1 i.e. for username
-        f.add(l2); // add label2 i.e. for password
-
-        f.setSize(400,300);//400 width and 500 height
-        f.setLayout(null);//using no layout managers
-        f.setVisible(true);//making the frame visible
-        f.setLocationRelativeTo(null);
-
-    }
 }
+

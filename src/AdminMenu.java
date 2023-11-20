@@ -49,7 +49,7 @@ public class AdminMenu {
 
 
         JButton create_but=new JButton("Create/Reset Database");//creating instance of JButton to create or reset database
-        create_but.setBounds(500,20,120,25);//x axis, y axis, width, height
+        create_but.setBounds(500,50,170,25);//x axis, y axis, width, height
         create_but.addActionListener(new ActionListener() { //Perform action
             public void actionPerformed(ActionEvent e){
 
@@ -60,12 +60,12 @@ public class AdminMenu {
         });
 
         JTextField searchField = new JTextField();
-        searchField.setBounds(100, 20, 200, 25);
+        searchField.setBounds(100, 10, 200, 25);
         f.add(searchField);
 
 
-        JButton view_but=new JButton("View Books");//creating instance of JButton to view books
-        view_but.setBounds(100,50,120,25);//x axis, y axis, width, height
+        JButton view_but=new JButton("View Books / Search Books");//creating instance of JButton to view books
+        view_but.setBounds(100,50,200,25);//x axis, y axis, width, height
         view_but.addActionListener(new ActionListener() {
             Connection connection = connect();
 
@@ -146,7 +146,7 @@ public class AdminMenu {
         );
 
         JButton issued_but=new JButton("View Issued Books");//creating instance of JButton to view the issued books
-        issued_but.setBounds(100,150,160,25);//x axis, y axis, width, height
+        issued_but.setBounds(500,100,160,25);//x axis, y axis, width, height
         issued_but.addActionListener(new ActionListener() {
                                          public void actionPerformed(ActionEvent e){
 
@@ -188,7 +188,7 @@ public class AdminMenu {
 
 
         JButton add_user=new JButton("Add User"); //creating instance of JButton to add users
-        add_user.setBounds(100,200,120,25); //set dimensions for button
+        add_user.setBounds(100,150,120,25); //set dimensions for button
 
         add_user.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e){
@@ -275,7 +275,7 @@ public class AdminMenu {
 
 
         JButton add_borrower=new JButton("Add Borrower"); //creating instance of JButton to add borrower
-        add_borrower.setBounds(100,250,120,25); //set dimensions for button
+        add_borrower.setBounds(500,150,120,25); //set dimensions for button
 
         add_borrower.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e){
@@ -375,7 +375,7 @@ public class AdminMenu {
 
 
         JButton add_book=new JButton("Add Book"); //creating instance of JButton for adding books
-        add_book.setBounds(100,300,120,25);
+        add_book.setBounds(100,200,120,25);
 
         add_book.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e){
@@ -474,7 +474,7 @@ public class AdminMenu {
 
 
         JButton issue_book=new JButton("Issue Book"); //creating instance of JButton to issue books
-        issue_book.setBounds(100,350,120,25);
+        issue_book.setBounds(500,200,120,25);
 
         issue_book.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e){
@@ -699,7 +699,7 @@ public class AdminMenu {
                         }
 
                     }
-                    });
+                });
 
 
                 g.add(create_but);
@@ -719,7 +719,7 @@ public class AdminMenu {
 
 
         JButton return_book=new JButton("Return Book"); //creating instance of JButton to return books
-        return_book.setBounds(100,400,160,25);
+        return_book.setBounds(100,250,160,25);
 
         return_book.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e){
@@ -788,8 +788,8 @@ public class AdminMenu {
             }
         });
 
-       JButton check_fine=new JButton("CHECK FINE"); //creating instance of JButton to return books
-        check_fine.setBounds(100,450,160,25);
+        JButton check_fine=new JButton("CHECK FINE"); //creating instance of JButton to return books
+        check_fine.setBounds(500,250,160,25);
 
         check_fine.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e){
@@ -797,17 +797,70 @@ public class AdminMenu {
                 JFrame g = new JFrame("Enter ID");
                 //g.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 //set labels
-                JLabel l1;
-                l1=new JLabel("ID)");  //Label 1 for Issue ID
+                JLabel l1,l2;
+                l1=new JLabel("FINE PAID BY ID");  //Label 1 for Issue ID
                 l1.setBounds(30,15, 100,30);
+
+                l2=new JLabel("CHECK FINE");  //Label 1 for Issue ID
+                l2.setBounds(30,50, 100,30);
 
 
                 JTextField ID=new JTextField();
-                ID.setBounds(110, 15, 130, 30);
+                ID.setBounds(150, 15, 130, 30);
+
+                JTextField FINE_ID=new JTextField();
+                FINE_ID.setBounds(150, 50, 130, 30);
+
+                JButton check_but=new JButton("CHECK FINE");
+                check_but.setBounds(100,170,100,25);//x axis, y axis, width, height
+                check_but.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        String id=FINE_ID.getText();
+                        String cardId = FINE_ID.getText();
+
+                        try {
+                            Statement stmt = connection.createStatement();
+                            stmt.executeUpdate("USE LIBRARY");
+                            // Fetch loan_ids associated with the given card_id from book_loans table
+                            String loanIdsQuery = "SELECT LOAN_ID FROM BOOK_LOANS WHERE CARDID = ?";
+                            PreparedStatement loanIdsStatement = connection.prepareStatement(loanIdsQuery);
+                            loanIdsStatement.setString(1, cardId);
+                            ResultSet loanIdsResult = loanIdsStatement.executeQuery();
+
+                            double totalFines = 0.00;
+
+                            // Calculate sum of fines for fetched loan_id entries in fines table
+                            while (loanIdsResult.next()) {
+                                int loanId = loanIdsResult.getInt("LOAN_ID");
+
+                                // Query to calculate sum of fines for each loan_id
+                                String finesQuery = "SELECT SUM(FINE_AMOUNT) AS TOTAL_FINE FROM FINES WHERE LOAN_ID = ? AND PAID != 1";
+                                PreparedStatement finesStatement = connection.prepareStatement(finesQuery);
+                                finesStatement.setInt(1, loanId);
+                                ResultSet finesResult = finesStatement.executeQuery();
+
+                                if (finesResult.next()) {
+                                    double sumFines = finesResult.getDouble("TOTAL_FINE");
+                                    totalFines += sumFines;
+                                }
+                            }
+
+                            // Show the total sum of fines for the card_id in a pop-up UI
+                            JOptionPane.showMessageDialog(null, "Total Fines for Card ID " + cardId + ": $" + totalFines);
+
+                        } catch (SQLException w) {
+                            // Handle any SQL exception
+                            w.printStackTrace();
+                        }
 
 
-                JButton create_but=new JButton("CHECK");//creating instance of JButton to mention return date and calculcate fine
-                create_but.setBounds(130,170,80,25);//x axis, y axis, width, height
+                    }
+                });
+
+
+                JButton create_but=new JButton("CALCULATE(NO CARD ID)/PAID");//creating instance of JButton to mention return date and calculcate fine
+                create_but.setBounds(300,170,300,25);//x axis, y axis, width, height
                 create_but.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {
@@ -833,8 +886,8 @@ public class AdminMenu {
 //                                if(loanID==1)
 //                                    dueDate = LocalDate.of(2023, 11, 10);
 //                                else {
-                                    dueDate = resultSet.getDate("DUE_DATE").toLocalDate();
-                              //  }
+                                dueDate = resultSet.getDate("DUE_DATE").toLocalDate();
+                                //  }
                                 LocalDate returnDate = resultSet.getDate("RETURN_DATE") != null ?
                                         resultSet.getDate("RETURN_DATE").toLocalDate() : LocalDate.now();
                                 System.out.println(dueDate+"  "+returnDate);
@@ -900,15 +953,19 @@ public class AdminMenu {
                             }
 
                         }
-                        }
+                    }
                 });
                 g.add(create_but);
+                g.add(FINE_ID);
                 g.add(l1);
+                g.add(l2);
                 g.add(ID);
-                g.setSize(350,250);//400 width and 500 height
+                g.add(check_but);
+                g.setSize(700,300);//400 width and 500 height
                 g.setLayout(null);//using no layout managers
                 g.setVisible(true);//making the frame visible
                 g.setLocationRelativeTo(null);
+
             }
         });
 
@@ -922,7 +979,7 @@ public class AdminMenu {
         f.add(add_user);
         f.add(add_borrower);
         f.add(check_fine);
-        f.setSize(1000,600);//400 width and 500 height
+        f.setSize(800,400);//400 width and 500 height
         f.setLayout(null);//using no layout managers
         f.setVisible(true);//making the frame visible
         f.setLocationRelativeTo(null);

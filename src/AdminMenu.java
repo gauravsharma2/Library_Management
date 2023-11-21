@@ -764,8 +764,9 @@ public class AdminMenu {
                         try {
                             Statement stmt = connection.createStatement();
                             stmt.executeUpdate("USE LIBRARY");
-                            PreparedStatement statement = connection.prepareStatement("SELECT * FROM BOOK_LOANS WHERE CARDID = ?");
+                            PreparedStatement statement = connection.prepareStatement("SELECT * FROM BOOK_LOANS WHERE CARDID = ? OR ISBN = ?");
                             statement.setString(1, CARDID.getText()); // Assuming CARDID is the JTextField for entering the card ID
+                            statement.setString(2, ISBN.getText());
                             ResultSet resultSet = statement.executeQuery();
 
 

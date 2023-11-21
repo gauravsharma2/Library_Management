@@ -4,6 +4,7 @@ import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import net.proteanit.sql.DbUtils;
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.*;
@@ -726,11 +727,10 @@ public class AdminMenu {
 
         return_book.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e){
-
                 JFrame g = new JFrame("Enter Details");
                 //g.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 //set labels
-                JLabel l1,l2,l3,l4;
+                JLabel l1,l4;
                 l1=new JLabel("ISBN)");  //Label 1 for Issue ID
                 l1.setBounds(30,15, 100,30);
 
@@ -739,11 +739,61 @@ public class AdminMenu {
                 l4.setBounds(30,50, 150,30);
 
                 JTextField ISBN = new JTextField();
-                ISBN.setBounds(110, 15, 200, 30);
+                ISBN.setBounds(180, 15, 200, 30);
 
 
                 JTextField CARDID=new JTextField();
-                CARDID.setBounds(180, 50, 130, 30);
+                CARDID.setBounds(180, 50, 200, 30);
+
+                JButton search_but=new JButton("Search");
+                search_but.setBounds(130,130,80,25);
+                search_but.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        JPanel bookPanel = new JPanel();
+
+
+                        JFrame frame = new JFrame("Library Books");
+                        //frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                        frame.getContentPane().add(bookPanel);
+                        frame.pack();
+                        frame.setVisible(true);
+                        frame.setSize(800,400);
+
+                        Connection connection = connect();
+                        try {
+                            Statement stmt = connection.createStatement();
+                            stmt.executeUpdate("USE LIBRARY");
+                            PreparedStatement statement = connection.prepareStatement("SELECT * FROM BOOK_LOANS WHERE CARDID = ?");
+                            statement.setString(1, CARDID.getText()); // Assuming CARDID is the JTextField for entering the card ID
+                            ResultSet resultSet = statement.executeQuery();
+
+
+                            // Assuming a GridLayout for the bookPanel
+                            bookPanel.setLayout(new GridLayout(0, 1)); // Adjust layout as needed
+
+                            // Process the results and display them on the panel
+                            while (resultSet.next()) {
+                                String bookISBN = resultSet.getString("ISBN");
+                                String loanID = resultSet.getString("LOAN_ID");
+                                // Retrieve other book details as needed
+
+                                // Create a JLabel to represent the book and loan ID and add it to the panel
+                                JLabel bookLabel = new JLabel("Loan ID: " + loanID + ", ISBN: " + bookISBN); // Modify as per your requirement
+                                bookPanel.add(bookLabel);
+                                // Add other book details to the label or create separate labels for them
+                            }
+                            frame.add(bookPanel);
+
+                            // Refresh the panel to reflect the changes
+                            bookPanel.revalidate();
+                            bookPanel.repaint();
+                        } catch (SQLException ex) {
+                            // Handle any potential SQL exceptions here
+                            ex.printStackTrace();
+                        }
+                    }
+                });
 
 
                 JButton create_but=new JButton("Return");//creating instance of JButton to mention return date and calculcate fine
@@ -790,10 +840,11 @@ public class AdminMenu {
                 });
                 g.add(l4);
                 g.add(create_but);
+                g.add(search_but);
                 g.add(l1);
                 g.add(ISBN);
                 g.add(CARDID);
-                g.setSize(350,250);//400 width and 500 height
+                g.setSize(400,400);//400 width and 500 height
                 g.setLayout(null);//using no layout managers
                 g.setVisible(true);//making the frame visible
                 g.setLocationRelativeTo(null);

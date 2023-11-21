@@ -770,6 +770,15 @@ public class AdminMenu {
 
                             if (rowsAffected > 0) {
                                 System.out.println("Successfully updated return date for the tuple.");
+                                PreparedStatement increaseAvailabilityStatement = connection.prepareStatement("UPDATE BOOK SET AVAILABILITY = AVAILABILITY + 1 WHERE ISBN = ?");
+                                increaseAvailabilityStatement.setString(1, isbn);
+
+                                int availabilityUpdated = increaseAvailabilityStatement.executeUpdate();
+                                if (availabilityUpdated > 0) {
+                                    System.out.println("Availability increased for the book.");
+                                } else {
+                                    System.out.println("Failed to update availability for the book.");
+                                }
                             } else {
                                 System.out.println("Tuple not found or no changes made.");
                             }
